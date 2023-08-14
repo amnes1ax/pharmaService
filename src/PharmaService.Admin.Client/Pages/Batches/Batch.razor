@@ -1,0 +1,202 @@
+@page "/batches/{batchId:guid}"
+
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.Admin.Client.Common
+@using PharmaService.Admin.Client.Common.Components
+@using PharmaService.Admin.Client.Extensions
+
+@inherits AbstractPage
+@implements IDisposable
+
+@inject IDialogService DialogService
+@inject IPharmaServiceClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Партия: @_model.Id</PageTitle>
+
+<MudGrid>
+    <MudItem xs="8" sm="8" md="8">
+        <MudBreadcrumbs Items="_breadcrumbsItems"></MudBreadcrumbs>
+    </MudItem>
+    <MudItem xs="4" sm="4" md="4" Style="text-align: end">
+        <IconButton Tooltip="Удалить"
+                    Icon="@Icons.Material.Filled.DeleteForever"
+                    Disabled="@(IsLoading || IsProcessing)"
+                    OnClick="@(async () => await ShowDeleteBatchDialogAsync())"/>
+        @if (IsLoading)
+        {
+            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+        }
+        else
+        {
+            <IconButton Tooltip="Обновить данные"
+                        Icon="@Icons.Material.Filled.Refresh"
+                        OnClick="ReloadModelAsync"/>
+        }
+    </MudItem>
+</MudGrid>
+<MudGrid>
+    <MudItem xs="12" sm="12" md="12">
+        <MudGrid>
+            <MudItem xs="12" sm="4" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Идентификатор:</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                <MudText Style="text-align: right">@_model.Id</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Продукт:</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                <MudLink Style="text-align: right" Href="@($"products/{_model.Product.ProductId}")">
+                                    @_model.Product.Title
+                                </MudLink>
+                            </MudItem>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Количество:</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                <MudText Style="text-align: right">@_model.ProductCount</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Дата поставки:</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                <MudText Style="text-align: right">@_model.ArrivedOn</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Произведен:</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                <MudText Style="text-align: right">
+                                    @(_model.CreatedOn is not null
+                                        ? _model.CreatedOn
+                                        : string.Empty)
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Годен до:</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                <MudText Style="text-align: right">
+                                    @(_model.ExpiredOn is not null
+                                        ? _model.CreatedOn
+                                        : string.Empty)
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Склад:</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                <MudLink Style="text-align: right" Href="@($"warehouses/{_model.Warehouse.WarehouseId}")">
+                                    @_model.Product.Title
+                                </MudLink>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudItem>
+</MudGrid>
+
+
+@code {
+
+    [Parameter]
+    public Guid BatchId { get; set; }
+
+    private BatchItem _model = null!;
+
+    private bool _loaded;
+
+    private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
+    {
+        new BreadcrumbItem("ГЛАВНАЯ", href: "#", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("ПАРТИИ", href: "/batches", icon: Icons.Material.Filled.BatchPrediction),
+    };
+
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+
+    public void Dispose()
+    {
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _breadcrumbsItems.Add(new BreadcrumbItem(BatchId.ToString(), href: $"/batches/{BatchId}", disabled: true));
+
+        await LoadModelAsync();
+        await base.OnInitializedAsync();
+    }
+
+    private Task LoadModelAsync() => LoadAsync(async () =>
+    {
+        var response = await ApiClient.GetBatchByIdAsync(BatchId, _cancellationTokenSource.Token);
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
+            return;
+        }
+        _model = new BatchItem
+        {
+            Id = response.Content!.Id,
+            Product = new ProductItem
+            {
+                ProductId = response.Content!.Product.ProductId,
+                Title = response.Content!.Product.Title
+            },
+            ProductCount = response.Content!.ProductCount,
+            ArrivedOn = response.Content!.ArrivedOn,
+            CreatedOn = response.Content!.CreatedOn,
+            ExpiredOn = response.Content!.ExpiredOn,
+            Warehouse = new WarehouseItem
+            {
+                WarehouseId = response.Content!.Warehouse.WarehouseId,
+                Title = response.Content!.Warehouse.Title
+            }
+        };
+        _loaded = true;
+    });
+
+    private Task ReloadModelAsync() => LoadModelAsync();
+
+    private async Task ShowDeleteBatchDialogAsync()
+    {
+        throw new NotImplementedException();
+    }
+
+    #region Models
+
+    private sealed class BatchItem
+    {
+        public required Guid Id { get; init; }
+        public required ProductItem Product { get; init; }
+        public required long ProductCount { get; init; }
+        public required DateTimeOffset ArrivedOn { get; init; }
+        public DateTimeOffset? CreatedOn { get; init; }
+        public DateTimeOffset? ExpiredOn { get; init; }
+        public required WarehouseItem Warehouse { get; init; }
+    }
+
+    private sealed class ProductItem
+    {
+        public required Guid ProductId { get; init; }
+        public required string Title { get; init; }
+    }
+
+    private sealed class WarehouseItem
+    {
+        public required Guid WarehouseId { get; init; }
+        public required string Title { get; init; }
+    }
+
+    #endregion
+
+}

@@ -1,0 +1,177 @@
+@page "/batches"
+
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.Admin.Client.Extensions
+@implements IDisposable
+
+@inject ISnackbar Snackbar
+@inject IPharmaServiceClient ApiClient
+
+<PageTitle>Список партий</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbsItems"></MudBreadcrumbs>
+
+<MudTable ServerData="@(new Func<TableState, Task<TableData<BatchItem>>>(OnLoadItemsAsync))"
+          Dense="true"
+          Hover="true"
+          Bordered="true"
+          Striped="true"
+          Virtualize="true"
+          FixedHeader="true"
+          Loading="@_loading"
+          LoadingProgressColor="Color.Info"
+          @ref="_table">
+    <ToolBarContent>
+        <IconButton Tooltip="Перезагрузить список" Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadItemsAsync"></IconButton>
+        <MudTextField T="string" ValueChanged="@(OnSearchAsync)" Placeholder="Поиск не реализован!" Class="mt-0" Style="margin-left: 20px;"/>
+    </ToolBarContent>
+    <ColGroup>
+
+    </ColGroup>
+    <HeaderContent>
+        <MudTh>Ид.</MudTh>
+        <MudTh>Товар</MudTh>
+        <MudTh>Количество</MudTh>
+        <MudTh>Дата прибытия</MudTh>
+        <MudTh>Годен до</MudTh>
+        <MudTh>Склад</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="ID">
+            <MudLink Href="@($"batches/{context.Id}")">
+                @context.Id
+            </MudLink>
+        </MudTd>
+        <MudTd DataLabel="Product">
+            <MudLink Href="@($"products/{context.Product.ProductId}")">
+                @context.Product.Title
+            </MudLink>
+        </MudTd>
+        <MudTd DataLabel="ProductCount">
+            @context.ProductCount
+        </MudTd>
+        <MudTd DataLabel="Arrived">
+            @context.ArrivedOn
+        </MudTd>
+        <MudTd DataLabel="Expired">
+            @context.ExpiredOn
+        </MudTd>
+        <MudTd DataLabel="Warehouse">
+            <MudLink Href="@($"warehouses/{context.Warehouse.WarehouseId}")">
+                @context.Warehouse.Title
+            </MudLink>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>Совпадающих записей не найдено</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Загрузка...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new[] { 25, 50, 100 }" RowsPerPageString="Строк на страницу"/>
+    </PagerContent>
+</MudTable>
+
+@code {
+
+    private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
+    {
+        new BreadcrumbItem("ГЛАВНАЯ", href: "#", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("ПАРТИИ", href: "/batches", icon: Icons.Material.Filled.BatchPrediction, disabled: true),
+    };
+
+    private MudTable<BatchItem> _table = null!;
+
+    private bool _loading = true;
+
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+
+    private async Task<TableData<BatchItem>> OnLoadItemsAsync(TableState state)
+    {
+        _loading = true;
+
+        try
+        {
+            var response = await ApiClient.GetBatchesListAsync(_cancellationTokenSource.Token);
+
+            _loading = false;
+
+            if (response.IsSuccessStatusCode is false)
+            {
+                Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
+                return new TableData<BatchItem>
+                {
+                    TotalItems = 0,
+                    Items = Array.Empty<BatchItem>()
+                };
+            }
+            return new TableData<BatchItem>
+            {
+                TotalItems = response.Content!.Count(),
+                Items = response.Content.Select(x => new BatchItem
+                {
+                    Id = x.Id,
+                    Product = new ProductItem
+                    {
+                        ProductId = x.Product.ProductId, 
+                        Title = x.Product.Title
+                    },
+                    ProductCount = x.ProductCount,
+                    ArrivedOn = x.ArrivedOn,
+                    CreatedOn = x.CreatedOn,
+                    ExpiredOn = x.ExpiredOn,
+                    Warehouse = new WarehouseItem
+                    {
+                        WarehouseId = x.Warehouse.WarehouseId, 
+                        Title = x.Warehouse.Title
+                    },
+                })
+            };
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OnSearchAsync(string text)
+    {
+        await ReloadItemsAsync();
+    }
+
+    private Task ReloadItemsAsync() => _table.ReloadServerData();
+
+    public void Dispose()
+    {
+        Snackbar?.Dispose();
+    }
+
+    #region Model
+
+    private sealed class BatchItem
+    {
+        public required Guid Id { get; init; }
+        public required ProductItem Product { get; init; }
+        public required long ProductCount { get; init; }
+        public required DateTimeOffset ArrivedOn { get; init; }
+        public DateTimeOffset? CreatedOn { get; init; }
+        public DateTimeOffset? ExpiredOn { get; init; }
+        public required WarehouseItem Warehouse { get; init; }
+    }
+
+    public sealed class ProductItem
+    {
+        public required Guid ProductId { get; init; }
+        public required string Title { get; init; }
+    }
+
+    public sealed class WarehouseItem
+    {
+        public required Guid WarehouseId { get; init; }
+        public required string Title { get; init; }
+    }
+
+    #endregion Model
+
+}

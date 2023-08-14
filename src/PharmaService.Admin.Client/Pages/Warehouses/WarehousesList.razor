@@ -1,0 +1,144 @@
+@page "/warehouses"
+
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.Admin.Client.Extensions
+@implements IDisposable
+
+@inject ISnackbar Snackbar
+@inject IPharmaServiceClient ApiClient
+
+<PageTitle>Список складов</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbsItems"></MudBreadcrumbs>
+
+<MudTable ServerData="@(new Func<TableState, Task<TableData<WarehouseItem>>>(OnLoadItemsAsync))"
+          Dense="true"
+          Hover="true"
+          Bordered="true"
+          Striped="true"
+          Virtualize="true"
+          FixedHeader="true"
+          Loading="@_loading"
+          LoadingProgressColor="Color.Info"
+          @ref="_table">
+    <ToolBarContent>
+        <IconButton Tooltip="Перезагрузить список" Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadItemsAsync"></IconButton>
+        <MudTextField T="string" ValueChanged="@(OnSearchAsync)" Placeholder="Поиск не реализован!" Class="mt-0" Style="margin-left: 20px;"/>
+    </ToolBarContent>
+    <ColGroup>
+
+    </ColGroup>
+    <HeaderContent>
+        <MudTh>Ид.</MudTh>
+        <MudTh>Название</MudTh>
+        <MudTh>Аптека</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="ID">
+            <MudLink Href="@($"warehouses/{context.Id}")">
+                @context.Id
+            </MudLink>
+        </MudTd>
+        <MudTd DataLabel="Название">
+            @context.Title
+        </MudTd>
+        <MudTd DataLabel="Аптека">
+            <MudLink Href="@($"pharmacies/{context.Pharmacy.PharmacyId}")">
+                @context.Pharmacy.Title
+            </MudLink>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>Совпадающих записей не найдено</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Загрузка...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new[] { 25, 50, 100 }" RowsPerPageString="Строк на страницу"/>
+    </PagerContent>
+</MudTable>
+
+@code {
+
+    private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
+    {
+        new BreadcrumbItem("ГЛАВНАЯ", href: "#", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("СПИСОК СКЛАДОВ", href: "/warehouses", icon: Icons.Material.Filled.Warehouse, disabled: true),
+    };
+
+    private MudTable<WarehouseItem> _table = null!;
+
+    private bool _loading = true;
+
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+
+    private async Task<TableData<WarehouseItem>> OnLoadItemsAsync(TableState state)
+    {
+        _loading = true;
+
+        try
+        {
+            var response = await ApiClient.GetWarehousesListAsync(_cancellationTokenSource.Token);
+
+            _loading = false;
+
+            if (response.IsSuccessStatusCode is false)
+            {
+                Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
+                return new TableData<WarehouseItem>
+                {
+                    TotalItems = 0,
+                    Items = Array.Empty<WarehouseItem>()
+                };
+            }
+            return new TableData<WarehouseItem>
+            {
+                TotalItems = response.Content!.Count(),
+                Items = response.Content.Select(x => new WarehouseItem
+                {
+                    Id = x.Id,
+                    Pharmacy = new PharmacyItem
+                    {
+                        PharmacyId = x.Pharmacy.PharmacyId,
+                        Title = x.Pharmacy.Title
+                    },
+                    Title = x.Title
+                })
+            };
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OnSearchAsync(string text)
+    {
+        await ReloadItemsAsync();
+    }
+
+    private Task ReloadItemsAsync() => _table.ReloadServerData();
+
+    public void Dispose()
+    {
+        Snackbar?.Dispose();
+    }
+
+    #region Model
+
+    private sealed class WarehouseItem
+    {
+        public required Guid Id { get; init; }
+        public required PharmacyItem Pharmacy { get; init; }
+        public required string Title { get; init; }
+    }
+
+    private sealed class PharmacyItem
+    {
+        public required Guid PharmacyId { get; init; }
+        public required string Title { get; init; }
+    }
+
+    #endregion Model
+}

@@ -1,0 +1,41 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class Pharmacy
+{
+    Guid Id
+    string Title
+    string Address
+    string PhoneNumber
+}
+
+class Warehouse
+{
+    Guid Id
+    Guid PharmacyId
+    string Title
+}
+
+class Batch
+{
+    Guid Id
+    Guid ProductId
+    long ProductCount
+    DateTimeOffset ArrivedOn
+    DateTimeOffset CreatedOn
+    DateTimeOffset ExpiredOn
+    Guid WarehouseId
+}
+
+class Product
+{
+    Guid Id
+    string Title
+    int ShelfLife
+}
+
+Pharmacy <- Warehouse
+Warehouse <- Batch
+Batch -> Product
+
+@enduml

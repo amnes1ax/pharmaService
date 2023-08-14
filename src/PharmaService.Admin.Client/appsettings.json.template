@@ -1,0 +1,21 @@
+﻿{
+    "Authentication": {
+    },
+    "Integrations": {
+        "Admin": {
+            "Address": "${INTEGRATIONS_ADMIN_ADDRESS}",
+            "Timeout": "00:00:30",
+            "RetryCount": 2,
+            "RetryTimeout": "00:00:01"
+        }
+    },
+    "ServiceLinks": {
+    },
+    "Logging": {
+        "LogLevel": {
+            "Default": "Information",
+            "System": "Information",
+            "Microsoft": "Information"
+        }
+    }
+}

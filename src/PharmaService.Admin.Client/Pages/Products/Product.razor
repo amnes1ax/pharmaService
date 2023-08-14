@@ -1,0 +1,142 @@
+@page "/products/{productId:guid}"
+
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.Admin.Client.Common
+@using PharmaService.Admin.Client.Common.Components
+@using PharmaService.Admin.Client.Extensions
+
+@inherits AbstractPage
+@implements IDisposable
+
+@inject IDialogService DialogService
+@inject IPharmaServiceClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Партия: @_model.Id</PageTitle>
+
+<MudGrid>
+    <MudItem xs="8" sm="8" md="8">
+        <MudBreadcrumbs Items="_breadcrumbsItems"></MudBreadcrumbs>
+    </MudItem>
+    <MudItem xs="4" sm="4" md="4" Style="text-align: end">
+        <IconButton Tooltip="Удалить"
+                    Icon="@Icons.Material.Filled.DeleteForever"
+                    Disabled="@(IsLoading || IsProcessing)"
+                    OnClick="@(async () => await ShowDeleteBatchDialogAsync())"/>
+        @if (IsLoading)
+        {
+            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+        }
+        else
+        {
+            <IconButton Tooltip="Обновить данные"
+                        Icon="@Icons.Material.Filled.Refresh"
+                        OnClick="ReloadModelAsync"/>
+        }
+    </MudItem>
+</MudGrid>
+<MudGrid>
+    <MudItem xs="12" sm="12" md="12">
+        <MudGrid>
+            <MudItem xs="12" sm="4" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Идентификатор:</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                <MudText Style="text-align: right">@_model.Id</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Название</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                @_model.Title
+                            </MudItem>
+                            <MudItem xs="6" sm="4" md="4">
+                                <MudText Class="label">Срок хранения в днях:</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="8" md="8">
+                                <MudText Style="text-align: right">
+                                    @(_model.ShelfLife is not null
+                                        ? _model.ShelfLife
+                                        : string.Empty)
+                                </MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudItem>
+</MudGrid>
+
+
+@code {
+
+    [Parameter]
+    public Guid ProductId { get; set; }
+
+    private ProductItem _model = null!;
+
+    private bool _loaded;
+
+    private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
+    {
+        new BreadcrumbItem("ГЛАВНАЯ", href: "#", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("ПРОДУКТЫ", href: "/products", icon: Icons.Material.Filled.BatchPrediction),
+    };
+
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+
+    public void Dispose()
+    {
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _breadcrumbsItems.Add(new BreadcrumbItem(ProductId.ToString(), href: $"/products/{ProductId}", disabled: true));
+
+        await LoadModelAsync();
+        await base.OnInitializedAsync();
+    }
+
+    private Task LoadModelAsync() => LoadAsync(async () =>
+    {
+        var response = await ApiClient.GetProductByIdAsync(ProductId, _cancellationTokenSource.Token);
+        if (response.IsSuccessStatusCode)
+        {
+            Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
+            return;
+        }
+        _model = new ProductItem
+        {
+            Id = response.Content!.Id,
+            Title = response.Content!.Title,
+            ShelfLife = response.Content!.ShelfLife,
+        };
+        _loaded = true;
+    });
+
+    private Task ReloadModelAsync() => LoadModelAsync();
+
+    private async Task ShowDeleteBatchDialogAsync()
+    {
+        throw new NotImplementedException();
+    }
+
+    #region Model
+
+    private sealed class ProductItem
+    {
+        public required Guid Id { get; init; }
+        public required string Title { get; init; }
+        public int? ShelfLife { get; init; }
+    }
+
+    #endregion Model
+
+}

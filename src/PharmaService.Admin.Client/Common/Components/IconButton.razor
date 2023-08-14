@@ -1,0 +1,33 @@
+﻿<MudTooltip Delay="600" Text="@Tooltip">
+    <MudIconButton Icon="@Icon" Size="@Size" Color="@Color" Variant="@Variant"
+                   Disabled="@Disabled" OnClick="@OnClick" Style="@Style">
+    </MudIconButton>
+</MudTooltip>
+
+@code {
+
+    [Parameter]
+    public string Icon { get; set; } = null!;
+
+    [Parameter]
+    public Color Color { get; set; }
+
+    [Parameter]
+    public Size Size { get; set; } = Size.Medium;
+
+    [Parameter]
+    public string Tooltip { get; set; } = null!;
+
+    [Parameter]
+    public bool Disabled { get; set; } = false;
+
+    [Parameter]
+    public string Style { get; set; } = null!;
+
+    [Parameter]
+    public Variant Variant { get; set; }
+
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnClick { get; set; }
+
+}

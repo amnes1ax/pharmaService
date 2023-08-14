@@ -1,0 +1,137 @@
+@page "/pharmacies"
+
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.Admin.Client.Extensions
+@implements IDisposable
+
+@inject ISnackbar Snackbar
+@inject IPharmaServiceClient ApiClient
+
+<PageTitle>Список аптек</PageTitle>
+
+<MudBreadcrumbs Items="_breadcrumbsItems"></MudBreadcrumbs>
+
+<MudTable ServerData="@(new Func<TableState, Task<TableData<PharmacyItem>>>(OnLoadItemsAsync))"
+          Dense="true"
+          Hover="true"
+          Bordered="true"
+          Striped="true"
+          Virtualize="true"
+          FixedHeader="true"
+          Loading="@_loading"
+          LoadingProgressColor="Color.Info"
+          @ref="_table">
+    <ToolBarContent>
+        <IconButton Tooltip="Перезагрузить список" Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadItemsAsync"></IconButton>
+        <MudTextField T="string" ValueChanged="@(OnSearchAsync)" Placeholder="Поиск не реализован!" Class="mt-0" Style="margin-left: 20px;"/>
+    </ToolBarContent>
+    <ColGroup>
+
+    </ColGroup>
+    <HeaderContent>
+        <MudTh>Ид.</MudTh>
+        <MudTh>Название</MudTh>
+        <MudTh>Адрес</MudTh>
+        <MudTh>Номер телефона</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="ID">
+            <MudLink Href="@($"pharmacies/{context.Id}")">
+                @context.Id
+            </MudLink>
+        </MudTd>
+        <MudTd DataLabel="Title">
+            @context.Title
+        </MudTd>
+        <MudTd DataLabel="Address">
+            @context.Address
+        </MudTd>
+        <MudTd DataLabel="PhoneNumber">
+            @context.PhoneNumber
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>Совпадающих записей не найдено</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Загрузка...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new[] { 25, 50, 100 }" RowsPerPageString="Строк на страницу"/>
+    </PagerContent>
+</MudTable>
+
+@code {
+
+    private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
+    {
+        new BreadcrumbItem("ГЛАВНАЯ", href: "#", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("СПИСОК АПТЕК", href: "/pharmacies", icon: Icons.Material.Filled.LocalPharmacy, disabled: true),
+    };
+
+    private MudTable<PharmacyItem> _table = null!;
+
+    private bool _loading = true;
+
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+
+    private async Task<TableData<PharmacyItem>> OnLoadItemsAsync(TableState state)
+    {
+        _loading = true;
+
+        try
+        {
+            var response = await ApiClient.GetPharmaciesListAsync(_cancellationTokenSource.Token);
+
+            _loading = false;
+
+            if (response.IsSuccessStatusCode is false)
+            {
+                Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
+                return new TableData<PharmacyItem>
+                {
+                    TotalItems = 0,
+                    Items = Array.Empty<PharmacyItem>()
+                };
+            }
+            return new TableData<PharmacyItem>
+            {
+                TotalItems = response.Content!.Count(),
+                Items = response.Content.Select(x => new PharmacyItem
+                {
+                    Id = x.Id,
+                    Title = x.Title, 
+                    Address = x.Address, 
+                    PhoneNumber = x.PhoneNumber
+                })
+            };
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OnSearchAsync(string text)
+    {
+        await ReloadItemsAsync();
+    }
+
+    private Task ReloadItemsAsync() => _table.ReloadServerData();
+
+    public void Dispose()
+    {
+        Snackbar?.Dispose();
+    }
+
+    #region Model
+
+    private sealed class PharmacyItem
+    {
+        public required Guid Id { get; init; }
+        public required string Title { get; init; }
+        public string? Address { get; init; }
+        public string? PhoneNumber { get; init; }
+    }
+    #endregion Model
+}

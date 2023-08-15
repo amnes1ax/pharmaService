@@ -14,7 +14,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 
-<PageTitle>Партия: @WarehouseId</PageTitle>
+<PageTitle>Склад: @WarehouseId</PageTitle>
 
 <MudGrid>
     <MudItem xs="8" sm="8" md="8">
@@ -40,7 +40,7 @@
 <MudGrid>
     <MudItem xs="12" sm="12" md="12">
         <MudGrid>
-            <MudItem xs="12" sm="4" md="4">
+            <MudItem xs="12" sm="12" md="12">
                 <MudCard>
                     <MudCardContent>
                         <MudGrid>
@@ -54,8 +54,8 @@
                                 <MudText Class="label">Аптека:</MudText>
                             </MudItem>
                             <MudItem xs="6" sm="8" md="8">
-                                <MudLink Style="text-align: right" Href="@($"pharmacies/{_model.Pharmacy.PharmacyId}")">
-                                    @_model.Pharmacy.Title
+                                <MudLink Style="text-align: right" Href="@($"pharmacies/{_model.Pharmacy?.PharmacyId}")">
+                                    <MudText Style="text-align: right">@_model.Pharmacy?.Title</MudText>
                                 </MudLink>
                             </MudItem>
                             <MudItem xs="6" sm="4" md="4">
@@ -115,20 +115,20 @@
     private Task LoadModelAsync() => LoadAsync(async () =>
     {
         var response = await ApiClient.GetWarehouseByIdAsync(WarehouseId, _cancellationTokenSource.Token);
-        if (response.IsSuccessStatusCode)
+        if (response.IsSuccessStatusCode is false)
         {
             Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
             return;
         }
-        _model = new WarehouseItem
+        _model = new WarehouseItem 
         {
-            Id = response.Content!.Id,
+            Id = response.Content.Id,
+            Title = response.Content.Title,
             Pharmacy = new PharmacyItem
             {
-                PharmacyId = response.Content!.Pharmacy.PharmacyId,
-                Title = response.Content!.Pharmacy.Title
+                PharmacyId = response.Content.Pharmacy.PharmacyId,
+                Title = response.Content.Pharmacy.Title
             },
-            Title = response.Content!.Title,
         };
         _loaded = true;
     });
@@ -163,7 +163,7 @@
 
     private sealed class PharmacyItem
     {
-        public Guid PharmacyId { get; init; }
+        public Guid? PharmacyId { get; init; }
         public string? Title { get; init; }
     }
 

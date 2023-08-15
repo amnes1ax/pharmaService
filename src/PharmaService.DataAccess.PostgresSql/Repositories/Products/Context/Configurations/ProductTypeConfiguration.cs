@@ -18,5 +18,11 @@ public class ProductTypeConfiguration : IEntityTypeConfiguration<Product>
             .HasColumnName("title");
         builder.Property(m => m.ShelfLife)
             .HasColumnName("shelf_life");
+        
+        builder
+            .HasMany<Batch>()
+            .WithOne(x=>x.Product)
+            .HasForeignKey(ph => ph.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

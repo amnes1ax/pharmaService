@@ -77,10 +77,10 @@
             }
             return new TableData<ProductsItem>
             {
-                TotalItems = response.Content!.Count(),
-                Items = response.Content!.Select(v => new ProductsItem
+                TotalItems = response.Content.Count(),
+                Items = response.Content.Select(v => new ProductsItem
                 {
-                    Id = v.Id,
+                    Id = v.ProductId,
                     Title = v.Title
                 })
             };
@@ -103,8 +103,8 @@
 
     private sealed class ProductsItem
     {
-        public required Guid Id { get; init; }
-        public required string Title { get; init; }
+        public Guid? Id { get; init; }
+        public string? Title { get; init; }
     }
 
     #endregion Models

@@ -97,7 +97,7 @@
             }
             return new TableData<BatchItem>
             {
-                TotalItems = response.Content!.Count(),
+                TotalItems = response.Content.Count(),
                 Items = response.Content.Select(x => new BatchItem
                 {
                     Id = x.Id,
@@ -136,25 +136,25 @@
 
     private sealed class BatchItem
     {
-        public required Guid Id { get; init; }
-        public required ProductItem Product { get; init; }
-        public required long ProductCount { get; init; }
-        public required DateTimeOffset ArrivedOn { get; init; }
+        public Guid? Id { get; init; }
+        public ProductItem? Product { get; init; }
+        public long? ProductCount { get; init; }
+        public DateTimeOffset? ArrivedOn { get; init; }
         public DateTimeOffset? CreatedOn { get; init; }
         public DateTimeOffset? ExpiredOn { get; init; }
-        public required WarehouseItem Warehouse { get; init; }
+        public WarehouseItem? Warehouse { get; init; }
     }
 
     public sealed class ProductItem
     {
-        public required Guid ProductId { get; init; }
-        public required string Title { get; init; }
+        public Guid? ProductId { get; init; }
+        public string? Title { get; init; }
     }
 
     public sealed class WarehouseItem
     {
-        public required Guid WarehouseId { get; init; }
-        public required string Title { get; init; }
+        public Guid? WarehouseId { get; init; }
+        public string? Title { get; init; }
     }
 
     #endregion Models

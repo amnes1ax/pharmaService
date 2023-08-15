@@ -10,6 +10,6 @@ public class Batch
     public DateTimeOffset? ExpiredOn { get; set; }
     public required Guid WarehouseId { get; set; }
     
-    public virtual Product? Product { get; set; }
-    public virtual Warehouse? Warehouse { get; set; }
+    public Product? Product { get; set; }
+    public Warehouse? Warehouse { get; set; }
 }

@@ -15,7 +15,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 
-<PageTitle>Партия: @_model.Id</PageTitle>
+<PageTitle>Партия: @BatchId</PageTitle>
 
 <MudGrid>
     <MudItem xs="8" sm="8" md="8">
@@ -41,7 +41,7 @@
 <MudGrid>
     <MudItem xs="12" sm="12" md="12">
         <MudGrid>
-            <MudItem xs="12" sm="4" md="4">
+            <MudItem xs="12" sm="12" md="12">
                 <MudCard>
                     <MudCardContent>
                         <MudGrid>
@@ -55,8 +55,8 @@
                                 <MudText Class="label">Продукт:</MudText>
                             </MudItem>
                             <MudItem xs="6" sm="8" md="8">
-                                <MudLink Style="text-align: right" Href="@($"products/{_model.Product.ProductId}")">
-                                    @_model.Product.Title
+                                <MudLink Style="text-align: right" Href="@($"products/{_model.Product?.ProductId}")">
+                                    <MudText Style="text-align: right">@_model.Product?.Title</MudText>
                                 </MudLink>
                             </MudItem>
                             <MudItem xs="6" sm="4" md="4">
@@ -95,8 +95,8 @@
                                 <MudText Class="label">Склад:</MudText>
                             </MudItem>
                             <MudItem xs="6" sm="8" md="8">
-                                <MudLink Style="text-align: right" Href="@($"warehouses/{_model.Warehouse.WarehouseId}")">
-                                    @_model.Product.Title
+                                <MudLink Style="text-align: right" Href="@($"warehouses/{_model.Warehouse?.WarehouseId}")">
+                                    <MudText Style="text-align: right"> @_model.Warehouse?.Title</MudText>
                                 </MudLink>
                             </MudItem>
                         </MudGrid>
@@ -142,14 +142,14 @@
     private Task LoadModelAsync() => LoadAsync(async () =>
     {
         var response = await ApiClient.GetBatchByIdAsync(BatchId, _cancellationTokenSource.Token);
-        if (response.IsSuccessStatusCode)
+        if (response.IsSuccessStatusCode is false)
         {
             Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
             return;
         }
         _model = new BatchItem
         {
-            Id = response.Content!.Id,
+            Id = response.Content?.Id,
             Product = new ProductItem
             {
                 ProductId = response.Content!.Product.ProductId,
@@ -193,8 +193,8 @@
     {
         public Guid? Id { get; init; }
         public ProductItem? Product { get; init; }
-        public long ProductCount { get; init; }
-        public DateTimeOffset ArrivedOn { get; init; }
+        public long? ProductCount { get; init; }
+        public DateTimeOffset? ArrivedOn { get; init; }
         public DateTimeOffset? CreatedOn { get; init; }
         public DateTimeOffset? ExpiredOn { get; init; }
         public WarehouseItem? Warehouse { get; init; }
@@ -202,13 +202,13 @@
 
     private sealed class ProductItem
     {
-        public Guid ProductId { get; init; }
+        public Guid? ProductId { get; init; }
         public string? Title { get; init; }
     }
 
     private sealed class WarehouseItem
     {
-        public Guid WarehouseId { get; init; }
+        public Guid? WarehouseId { get; init; }
         public string? Title { get; init; }
     }
 

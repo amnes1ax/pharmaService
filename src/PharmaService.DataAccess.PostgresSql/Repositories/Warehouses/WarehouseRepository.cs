@@ -23,19 +23,34 @@ public class WarehouseRepository : IWarehouseRepository
         CancellationToken cancellationToken = default)
     {
         var query = _context.Warehouses
-            .Where(warehouse => warehouse.Id == warehouseId)
-            .AsNoTracking();
+            .Where(warehouse => warehouse.Id == warehouseId);
         if (withRelations)
-            query.Include(x => x.Pharmacy);
+        {
+            await query
+                .Include(x => x.Pharmacy)
+                .LoadAsync(cancellationToken);
+        }
+        else
+        {
+            query.AsNoTracking();
+        }
         return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<Warehouse>> GetListAsync(bool withRelations = false,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.Warehouses.AsNoTracking();;
+        var query = _context.Warehouses;
         if (withRelations)
-            query.Include(x => x.Pharmacy);
+        {
+            await query
+                .Include(x => x.Pharmacy)
+                .LoadAsync(cancellationToken);
+        }
+        else
+        {
+            query.AsNoTracking();
+        }
         return await query.ToListAsync(cancellationToken);
     }
 

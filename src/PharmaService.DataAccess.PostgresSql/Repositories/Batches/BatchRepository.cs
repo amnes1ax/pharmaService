@@ -19,40 +19,65 @@ public class BatchRepository : IBatchRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<Batch?> GetByIdAsync(Guid batchId, bool withRelations = false, CancellationToken cancellationToken = default)
+    public async Task<Batch?> GetByIdAsync(Guid batchId, bool withRelations = false,
+        CancellationToken cancellationToken = default)
     {
         var query = _context.Batches
-            .Where(x => x.Id == batchId)
-            .AsNoTracking();
+            .Where(x => x.Id == batchId);
         if (withRelations)
-            query.Include(x => x.Product);
+        {
+            await query
+                .Include(x => x.Product)
+                .Include(x=>x.Warehouse)
+                .LoadAsync(cancellationToken);
+        }
+        else
+        {
+            query
+                .AsNoTracking();
+        }
+
         return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Batch>> GetListAsync(bool withRelations = false, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Batch>> GetListAsync(bool withRelations = false,
+        CancellationToken cancellationToken = default)
     {
-        var query = _context.Batches.AsNoTracking();
+        var query = _context.Batches;
         if (withRelations)
-            query.Include(x => x.Product);
+        {
+            await query
+                .Include(x => x.Product)
+                .Include(x=>x.Warehouse)
+                .LoadAsync(cancellationToken: cancellationToken);
+        }
+        else
+        {
+            query
+                .AsNoTracking();
+        }
+
         return await query.ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<Batch>> GetListByWarehouseIdAsync(Guid warehouseId,
         CancellationToken cancellationToken = default)
     {
-        var warehouse = await _context.Warehouses.Where(x => x.Id == warehouseId)
-            .Include(x => x.Batches)
-            .AsNoTracking()
-            .FirstAsync(cancellationToken);
+        var query = _context.Warehouses.Where(x => x.Id == warehouseId);
 
-        return warehouse.Batches;
+        await query
+            .Include(x => x.Batches)
+            .ThenInclude(x=>x.Product)
+            .LoadAsync(cancellationToken: cancellationToken);
+        
+        return await query.SelectMany(x => x.Batches).ToListAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(Batch batch, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
-    
+
     public async Task DeleteAsync(Batch batch, CancellationToken cancellationToken = default)
     {
         _context.Batches.Remove(batch);

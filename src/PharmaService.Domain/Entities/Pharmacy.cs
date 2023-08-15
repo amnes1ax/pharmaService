@@ -7,5 +7,5 @@ public class Pharmacy
     public string? Address { get; set; }
     public string? PhoneNumber { get; set; }
 
-    public virtual ICollection<Warehouse> Warehouses { get; set; } = null!;
+    public ICollection<Warehouse> Warehouses { get; set; } = null!;
 }

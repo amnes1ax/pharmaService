@@ -44,17 +44,11 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                 {
                     warehouse_id = table.Column<Guid>(type: "uuid", nullable: false),
                     pharmacy_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    title = table.Column<string>(type: "text", nullable: false),
-                    PharmacyId1 = table.Column<Guid>(type: "uuid", nullable: true)
+                    title = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_warehouses", x => x.warehouse_id);
-                    table.ForeignKey(
-                        name: "FK_warehouses_pharmacies_PharmacyId1",
-                        column: x => x.PharmacyId1,
-                        principalTable: "pharmacies",
-                        principalColumn: "pharmacy_id");
                     table.ForeignKey(
                         name: "FK_warehouses_pharmacies_pharmacy_id",
                         column: x => x.pharmacy_id,
@@ -73,8 +67,7 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                     arrived_on = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     created_on = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     expired_on = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    warehouse_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    WarehouseId1 = table.Column<Guid>(type: "uuid", nullable: true)
+                    warehouse_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -85,11 +78,6 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                         principalTable: "products",
                         principalColumn: "product_id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_batches_warehouses_WarehouseId1",
-                        column: x => x.WarehouseId1,
-                        principalTable: "warehouses",
-                        principalColumn: "warehouse_id");
                     table.ForeignKey(
                         name: "FK_batches_warehouses_warehouse_id",
                         column: x => x.warehouse_id,
@@ -109,19 +97,9 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                 column: "warehouse_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_batches_WarehouseId1",
-                table: "batches",
-                column: "WarehouseId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_warehouses_pharmacy_id",
                 table: "warehouses",
                 column: "pharmacy_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_warehouses_PharmacyId1",
-                table: "warehouses",
-                column: "PharmacyId1");
         }
 
         /// <inheritdoc />

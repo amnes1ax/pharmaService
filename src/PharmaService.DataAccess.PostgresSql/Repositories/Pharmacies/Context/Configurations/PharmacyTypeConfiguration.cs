@@ -23,7 +23,7 @@ public class PharmacyTypeConfiguration : IEntityTypeConfiguration<Pharmacy>
 
         builder
             .HasMany(x=>x.Warehouses)
-            .WithOne()
+            .WithOne(x=>x.Pharmacy)
             .HasForeignKey(ph => ph.PharmacyId)
             .OnDelete(DeleteBehavior.Cascade);
     }

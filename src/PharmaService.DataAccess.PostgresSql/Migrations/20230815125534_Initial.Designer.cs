@@ -12,7 +12,7 @@ using PharmaService.DataAccess.PostgresSql;
 namespace PharmaService.DataAccess.PostgresSql.Migrations
 {
     [DbContext(typeof(DataAccessSchemaMigratorDbContext))]
-    [Migration("20230815114501_Initial")]
+    [Migration("20230815125534_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -56,16 +56,11 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("warehouse_id");
 
-                    b.Property<Guid?>("WarehouseId1")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
 
                     b.HasIndex("WarehouseId");
-
-                    b.HasIndex("WarehouseId1");
 
                     b.ToTable("batches", (string)null);
                 });
@@ -127,9 +122,6 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("pharmacy_id");
 
-                    b.Property<Guid?>("PharmacyId1")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text")
@@ -138,8 +130,6 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PharmacyId");
-
-                    b.HasIndex("PharmacyId1");
 
                     b.ToTable("warehouses", (string)null);
                 });
@@ -153,14 +143,10 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                         .IsRequired();
 
                     b.HasOne("PharmaService.Domain.Entities.Warehouse", "Warehouse")
-                        .WithMany()
+                        .WithMany("Batches")
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("PharmaService.Domain.Entities.Warehouse", null)
-                        .WithMany("Batches")
-                        .HasForeignKey("WarehouseId1");
 
                     b.Navigation("Product");
 
@@ -170,14 +156,10 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
             modelBuilder.Entity("PharmaService.Domain.Entities.Warehouse", b =>
                 {
                     b.HasOne("PharmaService.Domain.Entities.Pharmacy", "Pharmacy")
-                        .WithMany()
+                        .WithMany("Warehouses")
                         .HasForeignKey("PharmacyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("PharmaService.Domain.Entities.Pharmacy", null)
-                        .WithMany("Warehouses")
-                        .HasForeignKey("PharmacyId1");
 
                     b.Navigation("Pharmacy");
                 });

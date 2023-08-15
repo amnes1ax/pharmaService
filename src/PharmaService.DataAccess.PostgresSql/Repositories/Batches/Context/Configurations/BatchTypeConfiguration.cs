@@ -35,7 +35,7 @@ public class BatchTypeConfiguration : IEntityTypeConfiguration<Batch>
         
         builder
             .HasOne(x=>x.Warehouse)
-            .WithMany()
+            .WithMany(x=>x.Batches)
             .HasForeignKey(b => b.WarehouseId)
             .OnDelete(DeleteBehavior.Cascade);
     }

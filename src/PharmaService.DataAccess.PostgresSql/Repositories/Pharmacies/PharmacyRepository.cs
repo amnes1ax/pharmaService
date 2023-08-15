@@ -21,17 +21,34 @@ public class PharmacyRepository : IPharmacyRepository
 
     public async Task<Pharmacy?> GetByIdAsync(Guid pharmacyId, bool withRelations = false, CancellationToken cancellationToken = default)
     {
-        return await _context.Pharmacies
-            .Where(x => x.Id == pharmacyId)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(cancellationToken);
+        var query = _context.Pharmacies
+            .Where(x => x.Id == pharmacyId);
+        if (withRelations)
+        {
+            await query
+                .Include(x => x.Warehouses)
+                .LoadAsync(cancellationToken);
+        }
+        else
+        {
+            query.AsNoTracking();
+        }
+        return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<Pharmacy>> GetListAsync(bool withRelations = false, CancellationToken cancellationToken = default)
     {
-        var query = _context.Pharmacies.AsNoTracking();
+        var query = _context.Pharmacies;
         if (withRelations)
-            query.Include(x => x.Warehouses);
+        {
+            await query
+                .Include(x => x.Warehouses)
+                .LoadAsync(cancellationToken: cancellationToken);
+        }
+        else
+        {
+            query.AsNoTracking();
+        }
         return await query.ToListAsync(cancellationToken);
     }
 

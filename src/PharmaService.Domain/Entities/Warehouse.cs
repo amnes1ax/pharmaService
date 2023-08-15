@@ -6,6 +6,6 @@ public class Warehouse
     public required Guid PharmacyId { get; set; }
     public required string Title { get; set; }
     
-    public virtual Pharmacy? Pharmacy { get; set; }
-    public virtual ICollection<Batch> Batches { get; set; } = null!;
+    public Pharmacy Pharmacy { get; set; } = null!;
+    public ICollection<Batch> Batches { get; set; } = null!;
 }

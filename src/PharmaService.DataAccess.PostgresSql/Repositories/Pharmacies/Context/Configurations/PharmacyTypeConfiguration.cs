@@ -21,7 +21,8 @@ public class PharmacyTypeConfiguration : IEntityTypeConfiguration<Pharmacy>
         builder.Property(m => m.PhoneNumber)
             .HasColumnName("phone_number");
 
-        builder.HasMany<Warehouse>()
+        builder
+            .HasMany(x=>x.Warehouses)
             .WithOne()
             .HasForeignKey(ph => ph.PharmacyId)
             .OnDelete(DeleteBehavior.Cascade);

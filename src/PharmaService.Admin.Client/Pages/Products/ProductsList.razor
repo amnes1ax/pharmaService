@@ -2,9 +2,12 @@
 
 @using PharmaService.IntegrationClient.Http
 @using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Common.Components
+@using PharmaService.Admin.Client.Pages.Products.Components
 @implements IDisposable
 
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject IPharmaServiceClient ApiClient
 
 <PageTitle>Список товаров</PageTitle>
@@ -22,6 +25,9 @@
           LoadingProgressColor="Color.Info"
           @ref="_table">
     <ToolBarContent>
+        <IconButton Tooltip="Добавить продукт"
+                    Icon="@Icons.Material.Filled.Add"
+                    OnClick="ShowCreateDialogAsync"/>
         <IconButton Tooltip="Перезагрузить список" Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadItemsAsync"></IconButton>
         <MudTextField T="string" ValueChanged="@(OnSearchAsync)" Placeholder="Поиск не реализован!" Class="mt-0" Style="margin-left: 20px;"/>
     </ToolBarContent>
@@ -111,6 +117,19 @@
 
     private async Task OnSearchAsync(string text)
     {
+        await ReloadItemsAsync();
+    }
+
+    private async Task ShowCreateDialogAsync()
+    {
+        var dialogReference = await DialogService.ShowAsync<CreateProductDialog>(
+            "Новый товар",
+            new DialogOptions { CloseOnEscapeKey = true });
+
+        var dialogResult = await dialogReference.Result;
+        if (dialogResult.Canceled)
+            return;
+
         await ReloadItemsAsync();
     }
 

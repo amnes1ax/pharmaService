@@ -2,9 +2,13 @@
 
 @using PharmaService.IntegrationClient.Http
 @using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Pages.Pharmacies.Components
+@using PharmaService.Admin.Client.Common.Components
+
 @implements IDisposable
 
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject IPharmaServiceClient ApiClient
 
 <PageTitle>Список аптек</PageTitle>
@@ -22,6 +26,9 @@
           LoadingProgressColor="Color.Info"
           @ref="_table">
     <ToolBarContent>
+        <IconButton Tooltip="Добавить аптеку"
+                    Icon="@Icons.Material.Filled.Add"
+                    OnClick="ShowCreateDialogAsync"/>
         <IconButton Tooltip="Перезагрузить список" Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadItemsAsync"></IconButton>
         <MudTextField T="string" ValueChanged="@(OnSearchAsync)" Placeholder="Поиск не реализован!" Class="mt-0" Style="margin-left: 20px;"/>
     </ToolBarContent>
@@ -100,8 +107,8 @@
                 Items = response.Content.Select(x => new PharmacyItem
                 {
                     Id = x.Id,
-                    Title = x.Title, 
-                    Address = x.Address, 
+                    Title = x.Title,
+                    Address = x.Address,
                     PhoneNumber = x.PhoneNumber
                 })
             };
@@ -114,6 +121,19 @@
 
     private async Task OnSearchAsync(string text)
     {
+        await ReloadItemsAsync();
+    }
+
+    private async Task ShowCreateDialogAsync()
+    {
+        var dialogReference = await DialogService.ShowAsync<CreatePharmacyDialog>(
+            "Новая аптека",
+            new DialogOptions { CloseOnEscapeKey = true });
+
+        var dialogResult = await dialogReference.Result;
+        if (dialogResult.Canceled)
+            return;
+
         await ReloadItemsAsync();
     }
 
@@ -133,5 +153,7 @@
         public string? Address { get; init; }
         public string? PhoneNumber { get; init; }
     }
+
     #endregion Model
+
 }

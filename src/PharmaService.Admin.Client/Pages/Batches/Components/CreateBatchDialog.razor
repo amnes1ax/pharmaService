@@ -1,5 +1,133 @@
-<h3>CreateBatchDialog</h3>
+@using FluentValidation
+@using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Common.Components
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.IntegrationClient.Http.Models.Batches
+@using Severity = MudBlazor.Severity
+
+@inherits PharmaService.Admin.Client.Common.AbstractDialog
+
+@inject IPharmaServiceClient ApiClient
+@inject ISnackbar Snackbar
+
+<MudDialog ClassActions="pr-6 pb-2">
+    <DialogContent >
+        <MudForm Model="@_model" @ref="@_form" @bind-IsValid="@_modelIsValid">
+            <MudGrid>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTextField Label="Ид. продукта" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.ProductId"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.ProductId)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTextField Label="Количество" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.ProductCount"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.ProductCount)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTextField Label="Ид. склада" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.WarehouseId"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.WarehouseId)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="9" md="9">
+                    <MudDatePicker
+                        Label="Дата производства"
+                        Editable="true"
+                        @bind-Date="_model.CreatedOn"
+                        For="@(() => _model.CreatedOn)"
+                        Disabled="@IsProcessing">
+                    </MudDatePicker>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDialog">Отменить</MudButton>
+        <ProgressButton Title="Создать" Color="Color.Primary" Disabled="@IsProcessing" OnClick="SubmitAsync"/>
+    </DialogActions>
+</MudDialog>
 
 @code {
-    
+
+    MudForm _form = null!;
+
+    readonly CreateBatchModel _model = new();
+    readonly CreateBatchModel.Validator _modelValidator = new();
+
+    private bool _modelIsValid;
+
+    private Task SubmitAsync() => ProcessAsync(async () =>
+    {
+        await _form.Validate();
+
+        if (_modelIsValid)
+        {
+            var response = await ApiClient.CreateBatchAsync(new CreateBatchRequest
+            {
+                ProductId = _model.ProductId!.Value,
+                ProductCount = _model.ProductCount!.Value,
+                CreatedOn = _model.CreatedOn!.Value,
+                WarehouseId = _model.WarehouseId!.Value
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add($"{response.StatusCode}: {response.Error.GetErrorDetails()}", Severity.Error, options => { options.CloseAfterNavigation = true; });
+            }
+        }
+    });
+
+    #region Models
+
+    private sealed class CreateBatchModel
+    {
+        public Guid? ProductId { get; set; }
+        public long? ProductCount { get; set; }
+        public DateTime? CreatedOn { get; set; }
+        public Guid? WarehouseId { get; set; }
+
+        internal sealed class Validator : AbstractValidator<CreateBatchModel>
+        {
+            public Validator()
+            {
+                RuleFor(m => m.ProductId)
+                    .NotEmpty()
+                    .WithMessage("Должен быть указан");
+
+                RuleFor(m => m.WarehouseId)
+                    .NotEmpty()
+                    .WithMessage("Должен быть указан");
+
+                RuleFor(m => m.ProductCount)
+                    .NotEmpty()
+                    .WithMessage("Должен быть указан")
+                    .GreaterThan(1)
+                    .WithMessage("Должно быть больше чем 0");
+
+                RuleFor(m => m.CreatedOn)
+                    .Must(date => DateTimeOffset.UtcNow >= date)
+                    .WithMessage("Должно быть не позднее текущей даты");
+                ;
+            }
+        }
+    }
+
+    #endregion
+
 }

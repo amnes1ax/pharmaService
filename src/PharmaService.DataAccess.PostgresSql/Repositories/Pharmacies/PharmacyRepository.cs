@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using PharmaService.DataAccess.Pharmacies;
-using PharmaService.DataAccess.Pharmacies.Exceptions;
 using PharmaService.Domain.Entities;
 
 namespace PharmaService.DataAccess.PostgresSql.Repositories.Pharmacies;
@@ -14,28 +13,36 @@ public class PharmacyRepository : IPharmacyRepository
         _context = context;
     }
     
-    public async Task AddAsync(Pharmacy pharmacy, CancellationToken cancellationToken)
+    public async Task AddAsync(Pharmacy pharmacy, CancellationToken cancellationToken = default)
     {
         await _context.Pharmacies.AddAsync(pharmacy, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
-    
-    public async Task<Pharmacy?> GetByIdAsync(Guid pharmacyId, CancellationToken cancellationToken) =>
-        await _context.Pharmacies.AsNoTracking().Where(x => x.Id == pharmacyId).FirstOrDefaultAsync(cancellationToken);
 
-    public async Task<IEnumerable<Pharmacy>> GetListAsync(CancellationToken cancellationToken) =>
-        await _context.Pharmacies.AsNoTracking().ToListAsync(cancellationToken);
+    public async Task<Pharmacy?> GetByIdAsync(Guid pharmacyId, bool withRelations = false, CancellationToken cancellationToken = default)
+    {
+        return await _context.Pharmacies
+            .Where(x => x.Id == pharmacyId)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 
-    public async Task UpdateAsync(Pharmacy pharmacy, CancellationToken cancellationToken)
+    public async Task<IEnumerable<Pharmacy>> GetListAsync(bool withRelations = false, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Pharmacies.AsNoTracking();
+        if (withRelations)
+            query.Include(x => x.Warehouses);
+        return await query.ToListAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(Pharmacy pharmacy, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public async Task DeleteAsync(Guid pharmacyId, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Pharmacy pharmacy, CancellationToken cancellationToken = default)
     {
-        var existingPharmacy = await GetByIdAsync(pharmacyId, cancellationToken);
-        if (existingPharmacy is null) throw new PharmacyNotFoundException();
-        _context.Pharmacies.Remove(existingPharmacy);
+        _context.Pharmacies.Remove(pharmacy);
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

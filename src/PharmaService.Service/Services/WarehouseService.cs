@@ -1,6 +1,4 @@
 using PharmaService.DataAccess.Batches;
-using PharmaService.DataAccess.Pharmacies;
-using PharmaService.DataAccess.Pharmacies.Exceptions;
 using PharmaService.DataAccess.Warehouses;
 using PharmaService.DataAccess.Warehouses.Exceptions;
 using PharmaService.Domain.Entities;
@@ -12,18 +10,15 @@ namespace PharmaService.Service.Services;
 public class WarehouseService : IWarehouseService
 {
     private readonly IWarehouseRepository _warehouseRepository;
-    private readonly IPharmacyRepository _pharmacyRepository;
     private readonly IBatchRepository _batchRepository;
 
-    public WarehouseService(IWarehouseRepository warehouseRepository, IPharmacyRepository pharmacyRepository,
-        IBatchRepository batchRepository)
+    public WarehouseService(IWarehouseRepository warehouseRepository, IBatchRepository batchRepository)
     {
         _warehouseRepository = warehouseRepository;
-        _pharmacyRepository = pharmacyRepository;
         _batchRepository = batchRepository;
     }
 
-    public async Task CreateAsync(CreateWarehouseModel warehouseModel, CancellationToken cancellationToken)
+    public async Task<Guid> CreateAsync(CreateWarehouseModel warehouseModel, CancellationToken cancellationToken)
     {
         var warehouse = new Warehouse
         {
@@ -32,62 +27,60 @@ public class WarehouseService : IWarehouseService
             Title = warehouseModel.Title,
         };
         await _warehouseRepository.AddAsync(warehouse, cancellationToken);
+        return warehouse.Id;
     }
 
     public async Task<WarehouseModel?> GetByIdAsync(Guid warehouseId, CancellationToken cancellationToken)
     {
-        var warehouse = await _warehouseRepository.GetByIdAsync(warehouseId, cancellationToken);
+        var warehouse =
+            await _warehouseRepository.GetByIdAsync(warehouseId, withRelations: true,
+                cancellationToken: cancellationToken);
         if (warehouse is null) throw new WarehouseNotFoundException();
-        var pharmacy = await _pharmacyRepository.GetByIdAsync(warehouse.PharmacyId, cancellationToken);
-        if (pharmacy is null) throw new PharmacyNotFoundException();
         return new WarehouseModel
         {
             Id = warehouse.Id,
             Pharmacy = new PharmacyView
             {
-                PharmacyId = pharmacy!.Id,
-                Title = pharmacy!.Title
+                PharmacyId = warehouse.PharmacyId,
+                Title = warehouse.Pharmacy!.Title
             },
             Title = warehouse.Title
         };
     }
 
-    public async Task<IEnumerable<AvailableBatch>> GetBatchesAsync(Guid warehouseId, CancellationToken cancellationToken)
+    public async Task<IEnumerable<AvailableBatch>> GetBatchesAsync(Guid warehouseId,
+        CancellationToken cancellationToken)
     {
-        var allBatches = await _batchRepository.GetListAsync(cancellationToken);
-        return allBatches.Where(b=>b.WarehouseId == warehouseId).Select(b => new AvailableBatch
-        {
-            Id = b.Id,
-            Product = new ProductView
+        var warehouse =
+            await _warehouseRepository.GetByIdAsync(warehouseId, cancellationToken: cancellationToken);
+        if (warehouse is null) throw new WarehouseNotFoundException();
+        var result = await _batchRepository.GetListByWarehouseIdAsync(warehouseId, cancellationToken);
+        return result.Select(x =>
+            new AvailableBatch
             {
-                ProductId = b.ProductId,
-                Title = null
-            },
-            ProductCount = 0,
-            ExpiredOn = null
-        });
+                Id = x.Id,
+                ProductId = x.ProductId,
+                ProductCount = x.ProductCount,
+                ExpiredOn = x.ExpiredOn
+            });
     }
 
     public async Task<IEnumerable<WarehouseModel>> GetListAsync(CancellationToken cancellationToken)
     {
-        var warehouses = await _warehouseRepository.GetListAsync(cancellationToken);
-        var pharmacies = await _pharmacyRepository.GetListAsync(cancellationToken);
-
-        return warehouses.Select(w =>
-        {
-            var pharmacy = pharmacies.FirstOrDefault(ph => ph.Id == w.PharmacyId);
-            if (pharmacy is null) throw new PharmacyNotFoundException();
-            return new WarehouseModel
+        var warehouses =
+            await _warehouseRepository.GetListAsync(withRelations: true, cancellationToken: cancellationToken);
+        return warehouses.Select(warehouse =>
+            new WarehouseModel
             {
-                Id = w.Id,
+                Id = warehouse.Id,
                 Pharmacy = new PharmacyView
                 {
-                    PharmacyId = w.PharmacyId,
-                    Title = pharmacy.Title
+                    PharmacyId = warehouse.PharmacyId,
+                    Title = warehouse.Pharmacy!.Title
                 },
-                Title = w.Title
-            };
-        });
+                Title = warehouse.Title
+            }
+        );
     }
 
     public async Task UpdateAsync(UpdateWarehouseModel warehouseModel, CancellationToken cancellationToken)
@@ -97,13 +90,15 @@ public class WarehouseService : IWarehouseService
 
     public async Task DeleteAsync(Guid warehouseId, CancellationToken cancellationToken)
     {
-        await _warehouseRepository.DeleteAsync(warehouseId, cancellationToken);
+        var warehouse = await _warehouseRepository.GetByIdAsync(warehouseId, cancellationToken: cancellationToken);
+        if (warehouse is null) throw new WarehouseNotFoundException();
+        await _warehouseRepository.DeleteAsync(warehouse, cancellationToken);
     }
 }
 
 public interface IWarehouseService
 {
-    Task CreateAsync(CreateWarehouseModel warehouseModel, CancellationToken cancellationToken);
+    Task<Guid> CreateAsync(CreateWarehouseModel warehouseModel, CancellationToken cancellationToken);
     Task<WarehouseModel?> GetByIdAsync(Guid warehouseId, CancellationToken cancellationToken);
     Task<IEnumerable<AvailableBatch>> GetBatchesAsync(Guid warehouseId, CancellationToken cancellationToken);
     Task<IEnumerable<WarehouseModel>> GetListAsync(CancellationToken cancellationToken);

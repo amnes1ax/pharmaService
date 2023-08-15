@@ -36,6 +36,18 @@ public partial class ProductController : ControllerBase
         return Ok(response);
     }
     
+    [HttpGet("by-pharmacy")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetListByPharmacyAsync(
+        [FromServices] IProductService productService,
+        [FromQuery] Guid pharmacyId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await productService.GetListByPharmacyAsync(pharmacyId, cancellationToken);
+        return Ok(response);
+    }
+    
     [HttpGet("{productId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

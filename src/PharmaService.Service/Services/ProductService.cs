@@ -1,17 +1,22 @@
+using PharmaService.DataAccess.Pharmacies;
+using PharmaService.DataAccess.Pharmacies.Exceptions;
 using PharmaService.DataAccess.Products;
 using PharmaService.DataAccess.Products.Exceptions;
 using PharmaService.Domain.Entities;
 using PharmaService.Service.Models.Product;
+using PharmaService.Service.Models._shared;
 
 namespace PharmaService.Service.Services;
 
 public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
+    private readonly IPharmacyRepository _pharmacyRepository;
 
-    public ProductService(IProductRepository productRepository)
+    public ProductService(IProductRepository productRepository, IPharmacyRepository pharmacyRepository)
     {
         _productRepository = productRepository;
+        _pharmacyRepository = pharmacyRepository;
     }
     
     public async Task CreateAsync(CreateProductModel productModel, CancellationToken cancellationToken)
@@ -48,6 +53,18 @@ public class ProductService : IProductService
         });
     }
 
+    public async Task<IEnumerable<ProductView>> GetListByPharmacyAsync(Guid pharmacyId, CancellationToken cancellationToken)
+    {
+        var pharmacy = await _pharmacyRepository.GetByIdAsync(pharmacyId, cancellationToken: cancellationToken);
+        if (pharmacy is null) throw new PharmacyNotFoundException();
+        var result = await _productRepository.GetListByPharmacyIdAsync(pharmacy.Id, cancellationToken);
+        return result.Select(x => new ProductView
+        {
+            ProductId = x.Id,
+            Title = x.Title
+        });
+    }
+
     public async Task UpdateAsync(UpdateProductModel productModel, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
@@ -55,7 +72,9 @@ public class ProductService : IProductService
 
     public async Task DeleteAsync(Guid productId, CancellationToken cancellationToken)
     {
-        await _productRepository.DeleteAsync(productId, cancellationToken);
+        var product = await _productRepository.GetByIdAsync(productId, cancellationToken);
+        if (product is null) throw new ProductNotFoundException();
+        await _productRepository.DeleteAsync(product, cancellationToken);
     }
 }
 
@@ -64,6 +83,7 @@ public interface IProductService
     Task CreateAsync(CreateProductModel productModel, CancellationToken cancellationToken);
     Task<ProductModel?> GetByIdAsync(Guid productId, CancellationToken cancellationToken);
     Task<IEnumerable<ProductModel>> GetListAsync(CancellationToken cancellationToken);
+    Task<IEnumerable<ProductView>> GetListByPharmacyAsync(Guid pharmacyId, CancellationToken cancellationToken);
     Task UpdateAsync(UpdateProductModel productModel, CancellationToken cancellationToken);
     Task DeleteAsync(Guid productId, CancellationToken cancellationToken);
 }

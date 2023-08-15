@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PharmaService.DataAccess.PostgresSql;
@@ -11,9 +12,11 @@ using PharmaService.DataAccess.PostgresSql;
 namespace PharmaService.DataAccess.PostgresSql.Migrations
 {
     [DbContext(typeof(DataAccessSchemaMigratorDbContext))]
-    partial class PharmaSchemaMigratorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230815114501_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,11 +56,16 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("warehouse_id");
 
+                    b.Property<Guid?>("WarehouseId1")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
 
                     b.HasIndex("WarehouseId");
+
+                    b.HasIndex("WarehouseId1");
 
                     b.ToTable("batches", (string)null);
                 });
@@ -119,6 +127,9 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("pharmacy_id");
 
+                    b.Property<Guid?>("PharmacyId1")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text")
@@ -128,31 +139,57 @@ namespace PharmaService.DataAccess.PostgresSql.Migrations
 
                     b.HasIndex("PharmacyId");
 
+                    b.HasIndex("PharmacyId1");
+
                     b.ToTable("warehouses", (string)null);
                 });
 
             modelBuilder.Entity("PharmaService.Domain.Entities.Batch", b =>
                 {
-                    b.HasOne("PharmaService.Domain.Entities.Product", null)
+                    b.HasOne("PharmaService.Domain.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PharmaService.Domain.Entities.Warehouse", null)
+                    b.HasOne("PharmaService.Domain.Entities.Warehouse", "Warehouse")
                         .WithMany()
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("PharmaService.Domain.Entities.Warehouse", null)
+                        .WithMany("Batches")
+                        .HasForeignKey("WarehouseId1");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Warehouse");
                 });
 
             modelBuilder.Entity("PharmaService.Domain.Entities.Warehouse", b =>
                 {
-                    b.HasOne("PharmaService.Domain.Entities.Pharmacy", null)
+                    b.HasOne("PharmaService.Domain.Entities.Pharmacy", "Pharmacy")
                         .WithMany()
                         .HasForeignKey("PharmacyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("PharmaService.Domain.Entities.Pharmacy", null)
+                        .WithMany("Warehouses")
+                        .HasForeignKey("PharmacyId1");
+
+                    b.Navigation("Pharmacy");
+                });
+
+            modelBuilder.Entity("PharmaService.Domain.Entities.Pharmacy", b =>
+                {
+                    b.Navigation("Warehouses");
+                });
+
+            modelBuilder.Entity("PharmaService.Domain.Entities.Warehouse", b =>
+                {
+                    b.Navigation("Batches");
                 });
 #pragma warning restore 612, 618
         }

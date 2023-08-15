@@ -51,6 +51,18 @@ public partial class BatchController : ControllerBase
         return Ok(response);
     }
     
+    [HttpGet("by-warehouse")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetListByWarehouseAsync(
+        [FromServices] IBatchService batchService,
+        [FromQuery] Guid warehouseId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await batchService.GetListByWarehouseAsync(warehouseId, cancellationToken);
+        return Ok(response);
+    }
+    
     [HttpDelete]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

@@ -9,4 +9,7 @@ public class Batch
     public DateTimeOffset? CreatedOn { get; set; }
     public DateTimeOffset? ExpiredOn { get; set; }
     public required Guid WarehouseId { get; set; }
+    
+    public virtual Product? Product { get; set; }
+    public virtual Warehouse? Warehouse { get; set; }
 }

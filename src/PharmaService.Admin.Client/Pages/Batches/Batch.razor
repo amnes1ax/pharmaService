@@ -4,6 +4,8 @@
 @using PharmaService.Admin.Client.Common
 @using PharmaService.Admin.Client.Common.Components
 @using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Pages.Batches.Components
+
 
 @inherits AbstractPage
 @implements IDisposable
@@ -11,6 +13,7 @@
 @inject IDialogService DialogService
 @inject IPharmaServiceClient ApiClient
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 
 <PageTitle>Партия: @_model.Id</PageTitle>
 
@@ -110,7 +113,7 @@
     [Parameter]
     public Guid BatchId { get; set; }
 
-    private BatchItem _model = null!;
+    private BatchItem _model = new();
 
     private bool _loaded;
 
@@ -169,32 +172,44 @@
 
     private async Task ShowDeleteBatchDialogAsync()
     {
-        throw new NotImplementedException();
+        var dialogReference = await DialogService.ShowAsync<DeleteBatchDialog>("Удаление");
+        var result = await dialogReference.Result;
+        if (result.Canceled)
+        {
+            return;
+        }
+        var response = await ApiClient.DeleteBatchAsync(BatchId, _cancellationTokenSource.Token);
+        if (response.IsSuccessStatusCode is false)
+        {
+            Snackbar.Add($"{response.StatusCode}: {response.Error.GetErrorDetails()}", Severity.Error, options => { options.CloseAfterNavigation = true; });
+            return;
+        }
+        Navigation.NavigateTo("/batches");
     }
 
     #region Models
 
     private sealed class BatchItem
     {
-        public required Guid Id { get; init; }
-        public required ProductItem Product { get; init; }
-        public required long ProductCount { get; init; }
-        public required DateTimeOffset ArrivedOn { get; init; }
+        public Guid? Id { get; init; }
+        public ProductItem? Product { get; init; }
+        public long ProductCount { get; init; }
+        public DateTimeOffset ArrivedOn { get; init; }
         public DateTimeOffset? CreatedOn { get; init; }
         public DateTimeOffset? ExpiredOn { get; init; }
-        public required WarehouseItem Warehouse { get; init; }
+        public WarehouseItem? Warehouse { get; init; }
     }
 
     private sealed class ProductItem
     {
-        public required Guid ProductId { get; init; }
-        public required string Title { get; init; }
+        public Guid ProductId { get; init; }
+        public string? Title { get; init; }
     }
 
     private sealed class WarehouseItem
     {
-        public required Guid WarehouseId { get; init; }
-        public required string Title { get; init; }
+        public Guid WarehouseId { get; init; }
+        public string? Title { get; init; }
     }
 
     #endregion

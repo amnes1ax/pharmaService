@@ -1,21 +1,14 @@
-@page "/batches"
-
 @using PharmaService.IntegrationClient.Http
 @using PharmaService.Admin.Client.Extensions
 @using PharmaService.Admin.Client.Common.Components
-@using PharmaService.Admin.Client.Pages.Batches.Components
 
 @implements IDisposable
 
-@inject ISnackbar Snackbar
-@inject IDialogService DialogService
 @inject IPharmaServiceClient ApiClient
-
-<PageTitle>Список партий</PageTitle>
-
-<MudBreadcrumbs Items="_breadcrumbsItems"></MudBreadcrumbs>
+@inject ISnackbar Snackbar
 
 <MudTable ServerData="@(new Func<TableState, Task<TableData<BatchItem>>>(OnLoadItemsAsync))"
+          RowsPerPage="25"
           Dense="true"
           Hover="true"
           Bordered="true"
@@ -26,49 +19,43 @@
           LoadingProgressColor="Color.Info"
           @ref="_table">
     <ToolBarContent>
-        <IconButton Tooltip="Добавить партию"
-                    Icon="@Icons.Material.Filled.Add"
-                    OnClick="ShowCreateDialogAsync"/>
-        <IconButton Tooltip="Перезагрузить список" Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadItemsAsync"></IconButton>
-        <MudTextField T="string" ValueChanged="@(OnSearchAsync)" Placeholder="Поиск не реализован!" Class="mt-0" Style="margin-left: 20px;"/>
+        <IconButton Tooltip="Перезагрузить список" Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadItemsAsync"/>
+        <MudTextField T="string" Placeholder="Поиск не реализован" Class="mt-0" Style="margin-left: 20px;"/>
     </ToolBarContent>
-    <ColGroup>
-
-    </ColGroup>
     <HeaderContent>
-        <MudTh>Ид.</MudTh>
-        <MudTh>Товар</MudTh>
-        <MudTh>Количество</MudTh>
-        <MudTh>Дата прибытия</MudTh>
-        <MudTh>Годен до</MudTh>
-        <MudTh>Склад</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="ID">
-            <MudLink Href="@($"batches/{context.Id}")">
-                @context.Id
-            </MudLink>
-        </MudTd>
-        <MudTd DataLabel="Product">
-            <MudLink Href="@($"products/{context.Product.ProductId}")">
-                @context.Product.Title
-            </MudLink>
-        </MudTd>
-        <MudTd DataLabel="ProductCount">
-            @context.ProductCount
-        </MudTd>
-        <MudTd DataLabel="Arrived">
-            @context.ArrivedOn
-        </MudTd>
-        <MudTd DataLabel="Expired">
-            @context.ExpiredOn
-        </MudTd>
-        <MudTd DataLabel="Warehouse">
-            <MudLink Href="@($"warehouses/{context.Warehouse.WarehouseId}")">
-                @context.Warehouse.Title
-            </MudLink>
-        </MudTd>
-    </RowTemplate>
+            <MudTh>Ид.</MudTh>
+            <MudTh>Товар</MudTh>
+            <MudTh>Количество</MudTh>
+            <MudTh>Дата прибытия</MudTh>
+            <MudTh>Годен до</MudTh>
+            <MudTh>Склад</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="ID">
+                <MudLink Href="@($"batches/{context.Id}")">
+                    @context.Id
+                </MudLink>
+            </MudTd>
+            <MudTd DataLabel="Product">
+                <MudLink Href="@($"products/{context.Product.ProductId}")">
+                    @context.Product.Title
+                </MudLink>
+            </MudTd>
+            <MudTd DataLabel="ProductCount">
+                @context.ProductCount
+            </MudTd>
+            <MudTd DataLabel="Arrived">
+                @context.ArrivedOn
+            </MudTd>
+            <MudTd DataLabel="Expired">
+                @context.ExpiredOn
+            </MudTd>
+            <MudTd DataLabel="Warehouse">
+                <MudLink Href="@($"warehouses/{context.Warehouse.WarehouseId}")">
+                    @context.Warehouse.Title
+                </MudLink>
+            </MudTd>
+        </RowTemplate>
     <NoRecordsContent>
         <MudText>Совпадающих записей не найдено</MudText>
     </NoRecordsContent>
@@ -82,11 +69,8 @@
 
 @code {
 
-    private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
-    {
-        new BreadcrumbItem("ГЛАВНАЯ", href: "#", icon: Icons.Material.Filled.Home),
-        new BreadcrumbItem("ПАРТИИ", href: "/batches", icon: Icons.Material.Filled.BatchPrediction, disabled: true),
-    };
+    [Parameter]
+    public Guid WarehouseId { get; set; }
 
     private MudTable<BatchItem> _table = null!;
 
@@ -100,9 +84,7 @@
 
         try
         {
-            var response = await ApiClient.GetBatchesListAsync(_cancellationTokenSource.Token);
-
-            _loading = false;
+            var response = await ApiClient.GetBatchesListByWarehouseAsync(WarehouseId, _cancellationTokenSource.Token);
 
             if (response.IsSuccessStatusCode is false)
             {
@@ -142,31 +124,15 @@
         }
     }
 
-    private async Task OnSearchAsync(string text)
-    {
-        await ReloadItemsAsync();
-    }
-    
-    private async Task ShowCreateDialogAsync()
-    {
-        var dialogReference = await DialogService.ShowAsync<CreateBatchDialog>(
-            "Новая партия", 
-            new DialogOptions {CloseOnEscapeKey = true});
-        
-        var dialogResult = await dialogReference.Result;
-        if (dialogResult.Canceled)
-            return;
-        await ReloadItemsAsync();
-    }
-
     private Task ReloadItemsAsync() => _table.ReloadServerData();
 
     public void Dispose()
     {
-        Snackbar?.Dispose();
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
     }
 
-    #region Model
+    #region Models
 
     private sealed class BatchItem
     {
@@ -191,6 +157,6 @@
         public required string Title { get; init; }
     }
 
-    #endregion Model
+    #endregion Models
 
 }

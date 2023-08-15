@@ -1,6 +1,6 @@
-namespace PharmaService.Service.Models.Pharmacy;
+namespace PharmaService.IntegrationClient.Http.Models.Products;
 
-public sealed class AvailableProduct
+public class ProductView
 {
     public required Guid Id { get; init; }
     public required string Title { get; init; }

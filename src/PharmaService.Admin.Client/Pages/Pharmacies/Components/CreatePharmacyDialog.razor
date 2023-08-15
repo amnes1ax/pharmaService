@@ -1,5 +1,107 @@
-<h3>CreatePharmacyDialog</h3>
+@using FluentValidation
+@using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Common.Components
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.IntegrationClient.Http.Models.Pharmacies
+@using Severity = MudBlazor.Severity
+
+@inherits PharmaService.Admin.Client.Common.AbstractDialog
+
+@inject IPharmaServiceClient ApiClient
+@inject ISnackbar Snackbar
+
+<MudDialog ClassActions="pr-6 pb-2">
+    <DialogContent>
+        <MudForm Model="@_model" @ref="@_form" @bind-IsValid="@_modelIsValid">
+            <MudGrid>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTextField Label="Название аптеки" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.Title"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.Title)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTextField Label="Адрес" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.Address"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.Address)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="9" md="9">
+                    <MudTextField Label="Номер телефона" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.PhoneNumber"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.PhoneNumber)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDialog">Отменить</MudButton>
+        <ProgressButton Title="Создать" Color="Color.Primary" Disabled="@IsProcessing" OnClick="SubmitAsync"/>
+    </DialogActions>
+</MudDialog>
 
 @code {
-    
+
+    MudForm _form = null!;
+
+    readonly CreatePharmacyModel _model = new();
+    readonly CreatePharmacyModel.Validator _modelValidator = new();
+
+    private bool _modelIsValid;
+
+    private Task SubmitAsync() => ProcessAsync(async () =>
+    {
+        await _form.Validate();
+
+        if (_modelIsValid)
+        {
+            var response = await ApiClient.CreatePharmacyAsync(new CreatePharmacyRequest
+            {
+                Title = _model.Title!,
+                Address = _model.Address,
+                PhoneNumber = _model.PhoneNumber
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add($"{response.StatusCode}: {response.Error.GetErrorDetails()}", Severity.Error, options => { options.CloseAfterNavigation = true; });
+            }
+        }
+    });
+
+    #region Models
+
+    private sealed class CreatePharmacyModel
+    {
+        public string? Title { get; set; }
+        public string? Address { get; set; }
+        public string? PhoneNumber { get; set; }
+
+        internal sealed class Validator : AbstractValidator<CreatePharmacyModel>
+        {
+            public Validator()
+            {
+                RuleFor(m => m.Title)
+                    .NotEmpty()
+                    .WithMessage("Должен быть указан");
+            }
+        }
+    }
+
+    #endregion
+
 }

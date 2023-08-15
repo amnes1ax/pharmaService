@@ -1,0 +1,112 @@
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Common.Components
+
+@implements IDisposable
+
+@inject IPharmaServiceClient ApiClient
+@inject ISnackbar Snackbar
+
+<MudTable ServerData="@(new Func<TableState, Task<TableData<ProductsItem>>>(OnLoadItemsAsync))"
+          RowsPerPage="25"
+          Dense="true"
+          Hover="true"
+          Bordered="true"
+          Striped="true"
+          Virtualize="true"
+          FixedHeader="true"
+          Loading="@_loading"
+          LoadingProgressColor="Color.Info"
+          @ref="_table">
+    <ToolBarContent>
+        <IconButton Tooltip="Перезагрузить список" Icon="@Icons.Material.Filled.Refresh" OnClick="ReloadItemsAsync"/>
+        <MudTextField T="string" Placeholder="Поиск не реализован" Class="mt-0" Style="margin-left: 20px;"/>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Ид.</MudTh>
+        <MudTh>Название</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="ID">
+            <MudLink Href="@($"products/{context.Id}")">
+                @context.Id
+            </MudLink>
+        </MudTd>
+        <MudTd DataLabel="Название">
+            @context.Title
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>Совпадающих записей не найдено</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Загрузка...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new[] { 25, 50, 100 }" RowsPerPageString="Строк на страницу"/>
+    </PagerContent>
+</MudTable>
+
+@code {
+
+    [Parameter]
+    public Guid PharmacyId { get; set; }
+
+    private MudTable<ProductsItem> _table = null!;
+
+    private bool _loading = true;
+
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+
+    private async Task<TableData<ProductsItem>> OnLoadItemsAsync(TableState state)
+    {
+        _loading = true;
+
+        try
+        {
+            var response = await ApiClient.GetProductsListByPharmacyAsync(PharmacyId, _cancellationTokenSource.Token);
+
+            if (response.IsSuccessStatusCode is false)
+            {
+                Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
+                return new TableData<ProductsItem>
+                {
+                    TotalItems = 0,
+                    Items = Array.Empty<ProductsItem>()
+                };
+            }
+            return new TableData<ProductsItem>
+            {
+                TotalItems = response.Content!.Count(),
+                Items = response.Content!.Select(v => new ProductsItem
+                {
+                    Id = v.Id,
+                    Title = v.Title
+                })
+            };
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private Task ReloadItemsAsync() => _table.ReloadServerData();
+
+    public void Dispose()
+    {
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
+    }
+
+    #region Models
+
+    private sealed class ProductsItem
+    {
+        public required Guid Id { get; init; }
+        public required string Title { get; init; }
+    }
+
+    #endregion Models
+
+}

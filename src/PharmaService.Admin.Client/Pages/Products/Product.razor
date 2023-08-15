@@ -4,6 +4,7 @@
 @using PharmaService.Admin.Client.Common
 @using PharmaService.Admin.Client.Common.Components
 @using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Pages.Products.Components
 
 @inherits AbstractPage
 @implements IDisposable
@@ -11,8 +12,9 @@
 @inject IDialogService DialogService
 @inject IPharmaServiceClient ApiClient
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 
-<PageTitle>Партия: @_model.Id</PageTitle>
+<PageTitle>Товар: @ProductId</PageTitle>
 
 <MudGrid>
     <MudItem xs="8" sm="8" md="8">
@@ -38,7 +40,7 @@
 <MudGrid>
     <MudItem xs="12" sm="12" md="12">
         <MudGrid>
-            <MudItem xs="12" sm="4" md="4">
+            <MudItem xs="12" sm="12" md="12">
                 <MudCard>
                     <MudCardContent>
                         <MudGrid>
@@ -52,7 +54,7 @@
                                 <MudText Class="label">Название</MudText>
                             </MudItem>
                             <MudItem xs="6" sm="8" md="8">
-                                @_model.Title
+                               <MudText Style="text-align: right">@_model.Title</MudText>
                             </MudItem>
                             <MudItem xs="6" sm="4" md="4">
                                 <MudText Class="label">Срок хранения в днях:</MudText>
@@ -78,7 +80,7 @@
     [Parameter]
     public Guid ProductId { get; set; }
 
-    private ProductItem _model = null!;
+    private ProductItem _model = new();
 
     private bool _loaded;
 
@@ -107,7 +109,7 @@
     private Task LoadModelAsync() => LoadAsync(async () =>
     {
         var response = await ApiClient.GetProductByIdAsync(ProductId, _cancellationTokenSource.Token);
-        if (response.IsSuccessStatusCode)
+        if (response.IsSuccessStatusCode is false)
         {
             Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
             return;
@@ -125,15 +127,27 @@
 
     private async Task ShowDeleteBatchDialogAsync()
     {
-        throw new NotImplementedException();
+        var dialogReference = await DialogService.ShowAsync<DeleteProductDialog>("Удаление");
+        var result = await dialogReference.Result;
+        if (result.Canceled)
+        {
+            return;
+        }
+        var response = await ApiClient.DeleteProductAsync(ProductId, _cancellationTokenSource.Token);
+        if (response.IsSuccessStatusCode is false)
+        {
+            Snackbar.Add($"{response.StatusCode}: {response.Error.GetErrorDetails()}", Severity.Error, options => { options.CloseAfterNavigation = true; });
+            return;
+        }
+        Navigation.NavigateTo("/products");
     }
 
     #region Model
 
     private sealed class ProductItem
     {
-        public required Guid Id { get; init; }
-        public required string Title { get; init; }
+        public Guid? Id { get; init; }
+        public string? Title { get; init; }
         public int? ShelfLife { get; init; }
     }
 

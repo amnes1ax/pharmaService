@@ -30,6 +30,28 @@ public interface IPharmaServiceClient
         CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Create warehouse
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Post("/api/warehouse")]
+    Task<ApiResponse<Guid>> CreateWarehouseAsync(
+        CreateWarehouseRequest request,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Delete warehouse
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Delete("/api/warehouse")]
+    Task<ApiResponse<Guid>> DeleteWarehouseAsync(
+        [Query] Guid warehouseId,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Get pharmacies
     /// </summary>
     /// <returns>
@@ -51,6 +73,28 @@ public interface IPharmaServiceClient
         CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Create pharmacy
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Post("/api/pharmacy")]
+    Task<ApiResponse<Guid>> CreatePharmacyAsync(
+        CreatePharmacyRequest request,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Delete pharmacy by id
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Delete("/api/pharmacy")]
+    Task<ApiResponse<PharmacyModel>> DeletePharmacyAsync(
+        [Query] Guid pharmacyId,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Get products
     /// </summary>
     /// <returns>
@@ -58,6 +102,17 @@ public interface IPharmaServiceClient
     /// </returns>
     [Get("/api/product")]
     Task<ApiResponse<IEnumerable<ProductModel>>> GetProductsListAsync(
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Get products
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Get("/api/product/by-pharmacy")]
+    Task<ApiResponse<IEnumerable<ProductView>>> GetProductsListByPharmacyAsync(
+        [Query] Guid pharmacyId,
         CancellationToken cancellationToken = default);
     
     /// <summary>
@@ -72,6 +127,28 @@ public interface IPharmaServiceClient
         CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Create product
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Post("/api/product")]
+    Task<ApiResponse<Guid>> CreateProductAsync(
+        CreateProductRequest request,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Delete product by id
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Delete("/api/product")]
+    Task<ApiResponse<ProductModel>> DeleteProductAsync(
+        [Query] Guid productId,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Get batches
     /// </summary>
     /// <returns>
@@ -79,6 +156,17 @@ public interface IPharmaServiceClient
     /// </returns>
     [Get("/api/batch")]
     Task<ApiResponse<IEnumerable<BatchModel>>> GetBatchesListAsync(
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Get batches
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Get("/api/batch/by-warehouse")]
+    Task<ApiResponse<IEnumerable<BatchModel>>> GetBatchesListByWarehouseAsync(
+        [Query] Guid warehouseId,
         CancellationToken cancellationToken = default);
     
     /// <summary>
@@ -90,5 +178,27 @@ public interface IPharmaServiceClient
     [Get("/api/batch/{batchId}")]
     Task<ApiResponse<BatchModel>> GetBatchByIdAsync(
         Guid batchId,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Create batch
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Post("/api/batch")]
+    Task<ApiResponse<Guid>> CreateBatchAsync(
+        CreateBatchRequest request,
+        CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Delete batch by id
+    /// </summary>
+    /// <returns>
+    /// 200 - Ok
+    /// </returns>
+    [Delete("/api/batch")]
+    Task<ApiResponse<BatchModel>> DeleteBatchAsync(
+        [Query] Guid batchId,
         CancellationToken cancellationToken = default);
 }

@@ -1,5 +1,99 @@
-<h3>CreateProductDialog</h3>
+@using FluentValidation
+@using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Common.Components
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.IntegrationClient.Http.Models.Products
+@using Severity = MudBlazor.Severity
+
+@inherits PharmaService.Admin.Client.Common.AbstractDialog
+
+@inject IPharmaServiceClient ApiClient
+@inject ISnackbar Snackbar
+
+<MudDialog ClassActions="pr-6 pb-2">
+    <DialogContent >
+        <MudForm Model="@_model" @ref="@_form" @bind-IsValid="@_modelIsValid">
+            <MudGrid>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTextField Label="Название продукта" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.Title"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.Title)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTextField
+                                  Label="Хранится дней" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="@_model.ShelfLife"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.ShelfLife)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDialog">Отменить</MudButton>
+        <ProgressButton Title="Создать" Color="Color.Primary" Disabled="@IsProcessing" OnClick="SubmitAsync"/>
+    </DialogActions>
+</MudDialog>
 
 @code {
-    
+
+    MudForm _form = null!;
+
+    readonly CreateProductModel _model = new();
+    readonly CreateProductModel.Validator _modelValidator = new();
+
+    private bool _modelIsValid;
+
+    private Task SubmitAsync() => ProcessAsync(async () =>
+    {
+        await _form.Validate();
+
+        if (_modelIsValid)
+        {
+            var response = await ApiClient.CreateProductAsync(new CreateProductRequest
+            {
+                Title = _model.Title!,
+                ShelfLife = _model.ShelfLife
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add($"{response.StatusCode}: {response.Error.GetErrorDetails()}", Severity.Error, options => { options.CloseAfterNavigation = true; });
+            }
+        }
+    });
+
+    #region Models
+
+    private sealed class CreateProductModel
+    {
+        public string? Title { get; set; }
+        public int? ShelfLife { get; set; }
+
+        internal sealed class Validator : AbstractValidator<CreateProductModel>
+        {
+            public Validator()
+            {
+                RuleFor(m => m.Title)
+                    .NotEmpty()
+                    .WithMessage("Должен быть указан");
+                
+                RuleFor(m => m.ShelfLife)
+                    .GreaterThan(0)
+                    .WithMessage("Должен быть положительным числом");
+            }
+        }
+    }
+    #endregion
 }

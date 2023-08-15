@@ -27,12 +27,14 @@ public class BatchTypeConfiguration : IEntityTypeConfiguration<Batch>
         builder.Property(m => m.WarehouseId)
             .HasColumnName("warehouse_id");
         
-        builder.HasOne<Product>()
+        builder
+            .HasOne(x=>x.Product)
             .WithMany()
             .HasForeignKey(b => b.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
         
-        builder.HasOne<Warehouse>()
+        builder
+            .HasOne(x=>x.Warehouse)
             .WithMany()
             .HasForeignKey(b => b.WarehouseId)
             .OnDelete(DeleteBehavior.Cascade);

@@ -1,5 +1,98 @@
-<h3>CreateWarehouseDialog</h3>
+@using FluentValidation
+@using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Common.Components
+@using PharmaService.IntegrationClient.Http
+@using PharmaService.IntegrationClient.Http.Models.Warehouses
+@using Severity = MudBlazor.Severity
+
+@inherits PharmaService.Admin.Client.Common.AbstractDialog
+
+@inject IPharmaServiceClient ApiClient
+@inject ISnackbar Snackbar
+
+<MudDialog ClassActions="pr-6 pb-2">
+    <DialogContent >
+        <MudForm Model="@_model" @ref="@_form" @bind-IsValid="@_modelIsValid">
+            <MudGrid>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTextField Label="Название" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.Title"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.Title)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudTextField Label="Ид. Аптеки" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.PharmacyId"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.PharmacyId)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDialog">Отменить</MudButton>
+        <ProgressButton Title="Создать" Color="Color.Primary" Disabled="@IsProcessing" OnClick="SubmitAsync"/>
+    </DialogActions>
+</MudDialog>
 
 @code {
-    
+
+    MudForm _form = null!;
+
+    readonly CreateWarehouseModel _model = new();
+    readonly CreateWarehouseModel.Validator _modelValidator = new();
+
+    private bool _modelIsValid;
+
+    private Task SubmitAsync() => ProcessAsync(async () =>
+    {
+        await _form.Validate();
+
+        if (_modelIsValid)
+        {
+            var response = await ApiClient.CreateWarehouseAsync(new CreateWarehouseRequest
+            {
+                PharmacyId = _model.PharmacyId!.Value, 
+                Title = _model.Title!
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add($"{response.StatusCode}: {response.Error.GetErrorDetails()}", Severity.Error, options => { options.CloseAfterNavigation = true; });
+            }
+        }
+    });
+
+    #region Models
+
+    private sealed class CreateWarehouseModel
+    {
+        public Guid? PharmacyId { get; set; }
+        public string? Title { get; set; }
+        
+        internal sealed class Validator : AbstractValidator<CreateWarehouseModel>
+        {
+            public Validator()
+            {
+                RuleFor(m => m.PharmacyId)
+                    .NotEmpty()
+                    .WithMessage("Должен быть указан");
+
+                RuleFor(m => m.Title)
+                    .NotEmpty()
+                    .WithMessage("Должен быть указан");
+            }
+        }
+    }
+    #endregion
 }

@@ -19,7 +19,8 @@ public class WarehouseTypeConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.Property(m => m.PharmacyId)
             .HasColumnName("pharmacy_id");
         
-        builder.HasOne<Pharmacy>()
+        builder
+            .HasOne(x=>x.Pharmacy)
             .WithMany()
             .HasForeignKey(w => w.PharmacyId)
             .OnDelete(DeleteBehavior.Cascade);

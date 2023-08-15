@@ -4,6 +4,7 @@
 @using PharmaService.Admin.Client.Common
 @using PharmaService.Admin.Client.Common.Components
 @using PharmaService.Admin.Client.Extensions
+@using PharmaService.Admin.Client.Pages.Warehouses.Components
 
 @inherits AbstractPage
 @implements IDisposable
@@ -11,8 +12,9 @@
 @inject IDialogService DialogService
 @inject IPharmaServiceClient ApiClient
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 
-<PageTitle>Партия: @_model.Id</PageTitle>
+<PageTitle>Партия: @WarehouseId</PageTitle>
 
 <MudGrid>
     <MudItem xs="8" sm="8" md="8">
@@ -68,6 +70,14 @@
             </MudItem>
         </MudGrid>
     </MudItem>
+    @if (_loaded)
+    {
+        <MudItem xs="12" sm="12" md="12">
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pt-0 pb-0">
+                <BatchesList WarehouseId="WarehouseId"/>
+            </MudTabs>
+        </MudItem>
+    }
 </MudGrid>
 
 
@@ -76,14 +86,14 @@
     [Parameter]
     public Guid WarehouseId { get; set; }
 
-    private WarehouseItem _model = null!;
+    private WarehouseItem _model = new();
 
     private bool _loaded;
 
     private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
     {
         new BreadcrumbItem("ГЛАВНАЯ", href: "#", icon: Icons.Material.Filled.Home),
-        new BreadcrumbItem("ПАРТИИ", href: "/warehouses", icon: Icons.Material.Filled.BatchPrediction),
+        new BreadcrumbItem("СКЛАДЫ", href: "/warehouses", icon: Icons.Material.Filled.Warehouse),
     };
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -112,12 +122,12 @@
         }
         _model = new WarehouseItem
         {
-            Id = response.Content!.Id, 
+            Id = response.Content!.Id,
             Pharmacy = new PharmacyItem
             {
-                PharmacyId = response.Content!.Pharmacy.PharmacyId, 
+                PharmacyId = response.Content!.Pharmacy.PharmacyId,
                 Title = response.Content!.Pharmacy.Title
-            }, 
+            },
             Title = response.Content!.Title,
         };
         _loaded = true;
@@ -127,22 +137,34 @@
 
     private async Task ShowDeleteBatchDialogAsync()
     {
-        throw new NotImplementedException();
+        var dialogReference = await DialogService.ShowAsync<DeleteWarehouseDialog>("Удаление");
+        var result = await dialogReference.Result;
+        if (result.Canceled)
+        {
+            return;
+        }
+        var response = await ApiClient.DeleteWarehouseAsync(WarehouseId, _cancellationTokenSource.Token);
+        if (response.IsSuccessStatusCode is false)
+        {
+            Snackbar.Add($"{response.StatusCode}: {response.Error.GetErrorDetails()}", Severity.Error, options => { options.CloseAfterNavigation = true; });
+            return;
+        }
+        Navigation.NavigateTo("/warehouses");
     }
 
     #region Models
 
     private sealed class WarehouseItem
     {
-        public required Guid Id { get; init; }
-        public required PharmacyItem Pharmacy { get; init; }
-        public required string Title { get; init; }
+        public Guid? Id { get; init; }
+        public PharmacyItem? Pharmacy { get; init; }
+        public string? Title { get; init; }
     }
 
     private sealed class PharmacyItem
     {
-        public required Guid PharmacyId { get; init; }
-        public required string Title { get; init; }
+        public Guid PharmacyId { get; init; }
+        public string? Title { get; init; }
     }
 
     #endregion

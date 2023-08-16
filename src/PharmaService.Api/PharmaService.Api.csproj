@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentValidation" Version="11.7.1" />
+        <PackageReference Include="Hellang.Middleware.ProblemDetails" Version="6.5.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.10" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
         <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
@@ -30,7 +30,6 @@
 
 
     <ItemGroup>
-      <ProjectReference Include="..\PharmaService.DataAccess.PostgresSql\PharmaService.DataAccess.PostgresSql.csproj" />
       <ProjectReference Include="..\PharmaService.Service\PharmaService.Service.csproj" />
     </ItemGroup>
 

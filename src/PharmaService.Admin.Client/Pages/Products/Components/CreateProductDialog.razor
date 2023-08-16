@@ -15,22 +15,24 @@
         <MudForm Model="@_model" @ref="@_form" @bind-IsValid="@_modelIsValid">
             <MudGrid>
                 <MudItem xs="12" sm="12" md="12">
-                    <MudTextField Label="Название продукта" Variant="Variant.Outlined" Class="my-0"
-                                  @bind-Value="_model.Title"
-                                  Validation="@(_modelValidator.ValidateValue())"
-                                  For="@(() => _model.Title)"
-                                  Immediate="false"
-                                  Disabled="@IsProcessing">
+                    <MudTextField
+                        Label="Название товара" Variant="Variant.Outlined" Class="my-0"
+                        @bind-Value="_model.Title"
+                        Validation="@(_modelValidator.ValidateValue())"
+                        For="@(() => _model.Title)"
+                        Immediate="false"
+                        Disabled="@IsProcessing">
                     </MudTextField>
                 </MudItem>
                 <MudItem xs="12" sm="12" md="12">
                     <MudTextField
-                                  Label="Хранится дней" Variant="Variant.Outlined" Class="my-0"
-                                  @bind-Value="@_model.ShelfLife"
-                                  Validation="@(_modelValidator.ValidateValue())"
-                                  For="@(() => _model.ShelfLife)"
-                                  Immediate="false"
-                                  Disabled="@IsProcessing">
+                        Placeholder="Необязательный"
+                        Label="Хранится дней" Variant="Variant.Outlined" Class="my-0"
+                        @bind-Value="@_model.ShelfLife"
+                        Validation="@(_modelValidator.ValidateValue())"
+                        For="@(() => _model.ShelfLife)"
+                        Immediate="false"
+                        Disabled="@IsProcessing">
                     </MudTextField>
                 </MudItem>
             </MudGrid>
@@ -87,13 +89,17 @@
             {
                 RuleFor(m => m.Title)
                     .NotEmpty()
-                    .WithMessage("Должен быть указан");
-                
+                    .WithMessage("Должен быть указан")
+                    .MaximumLength(100)
+                    .WithMessage("Название не может превышать 100 символов.");
+
                 RuleFor(m => m.ShelfLife)
                     .GreaterThan(0)
                     .WithMessage("Должен быть положительным числом");
             }
         }
     }
+
     #endregion
+
 }

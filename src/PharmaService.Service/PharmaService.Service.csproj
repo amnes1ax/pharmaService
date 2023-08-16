@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\PharmaService.DataAccess.PostgresSql\PharmaService.DataAccess.PostgresSql.csproj" />
         <ProjectReference Include="..\PharmaService.DataAccess\PharmaService.DataAccess.csproj" />
     </ItemGroup>
 

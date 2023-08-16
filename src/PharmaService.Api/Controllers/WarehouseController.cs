@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using PharmaService.DataAccess.Warehouses.Exceptions;
 using PharmaService.Service.Models.Warehouse;
 using PharmaService.Service.Services;
 
@@ -44,8 +45,15 @@ public partial class WarehouseController : ControllerBase
         [FromRoute] [Required] Guid warehouseId,
         CancellationToken cancellationToken = default)
     {
-        var response = await warehouseService.GetByIdAsync(warehouseId, cancellationToken);
-        return Ok(response);
+        try
+        {
+            var response = await warehouseService.GetByIdAsync(warehouseId, cancellationToken);
+            return Ok(response);
+        }
+        catch (WarehouseNotFoundException)
+        {
+            return NotFound();
+        }
     }
     
     [HttpDelete]
@@ -56,7 +64,14 @@ public partial class WarehouseController : ControllerBase
         [FromQuery] [Required] Guid warehouseId,
         CancellationToken cancellationToken = default)
     {
-        await warehouseService.DeleteAsync(warehouseId, cancellationToken);
-        return Ok();
+        try
+        {
+            await warehouseService.DeleteAsync(warehouseId, cancellationToken);
+            return Ok();
+        }
+        catch (WarehouseNotFoundException)
+        {
+            return NotFound();
+        }
     }
 }

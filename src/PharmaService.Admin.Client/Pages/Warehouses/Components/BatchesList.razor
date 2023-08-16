@@ -50,11 +50,6 @@
             <MudTd DataLabel="Expired">
                 @context.ExpiredOn
             </MudTd>
-            <MudTd DataLabel="Warehouse">
-                <MudLink Href="@($"warehouses/{context.Warehouse.WarehouseId}")">
-                    @context.Warehouse.Title
-                </MudLink>
-            </MudTd>
         </RowTemplate>
     <NoRecordsContent>
         <MudText>Совпадающих записей не найдено</MudText>
@@ -110,11 +105,6 @@
                     ArrivedOn = x.ArrivedOn,
                     CreatedOn = x.CreatedOn,
                     ExpiredOn = x.ExpiredOn,
-                    Warehouse = new WarehouseItem
-                    {
-                        WarehouseId = x.Warehouse.WarehouseId, 
-                        Title = x.Warehouse.Title
-                    },
                 })
             };
         }
@@ -142,18 +132,11 @@
         public DateTimeOffset? ArrivedOn { get; init; }
         public DateTimeOffset? CreatedOn { get; init; }
         public DateTimeOffset? ExpiredOn { get; init; }
-        public WarehouseItem? Warehouse { get; init; }
     }
 
     public sealed class ProductItem
     {
         public Guid? ProductId { get; init; }
-        public string? Title { get; init; }
-    }
-
-    public sealed class WarehouseItem
-    {
-        public Guid? WarehouseId { get; init; }
         public string? Title { get; init; }
     }
 

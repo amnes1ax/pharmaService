@@ -90,7 +90,9 @@
 
                 RuleFor(m => m.Title)
                     .NotEmpty()
-                    .WithMessage("Должен быть указан");
+                    .WithMessage("Должен быть указан")
+                    .MaximumLength(100)
+                    .WithMessage("Название не может превышать 100 символов.");
             }
         }
     }

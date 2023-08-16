@@ -4,7 +4,7 @@ services:
   ph-api:
     container_name: ph-api
     environment:
-      ConnectionStrings:postgres: host=ph-pg; port=5432; database=pharma_service; username=app; password=password;
+      ConnectionStrings:main: Host=ph-pg; port=5432; database=pharma_service; username=app; password=password;
       Serilog:WriteTo:0:Name: Console
       Serilog:WriteTo:0:Args:formatter: Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact
     build:
@@ -18,7 +18,7 @@ services:
   ph-admin-client:
     container_name: ph-admin-client
     environment:
-      WebShopApi:BaseAddress: http://ph-api
+      Integrations:Admin:Address: http://localhost:8080
     ports:
       - "9080:80"
     build:

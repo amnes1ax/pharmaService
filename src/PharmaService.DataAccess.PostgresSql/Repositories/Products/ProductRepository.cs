@@ -41,6 +41,7 @@ public class ProductRepository : IProductRepository
             .Include(x => x.Warehouses)
             .ThenInclude(x=>x.Batches)
             .ThenInclude(x=>x.Product)
+            .AsSplitQuery()
             .AsNoTracking()
             .FirstAsync(cancellationToken);
         

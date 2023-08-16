@@ -54,7 +54,7 @@
                                 <MudText Class="label">Название</MudText>
                             </MudItem>
                             <MudItem xs="6" sm="8" md="8">
-                               <MudText Style="text-align: right"> @_model.Title</MudText>
+                                <MudText Style="text-align: right"> @_model.Title</MudText>
                             </MudItem>
                             <MudItem xs="6" sm="4" md="4">
                                 <MudText Class="label">Адрес:</MudText>
@@ -78,7 +78,9 @@
     {
         <MudItem xs="12" sm="12" md="12">
             <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pt-0 pb-0">
-                <ProductsList PharmacyId="PharmacyId"/>
+                <MudTabPanel Text="Список товаров на складах аптеки">
+                    <ProductsList PharmacyId="PharmacyId"/>
+                </MudTabPanel>
             </MudTabs>
         </MudItem>
     }
@@ -97,7 +99,7 @@
     private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
     {
         new BreadcrumbItem("ГЛАВНАЯ", href: "#", icon: Icons.Material.Filled.Home),
-        new BreadcrumbItem("АПТЕКИ", href: "/pharmacies", icon: Icons.Material.Filled.BatchPrediction),
+        new BreadcrumbItem("СПИСОК АПТЕК", href: "/pharmacies", icon: Icons.Material.Filled.LocalPharmacy),
     };
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();

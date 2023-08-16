@@ -1,5 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using PharmaService.DataAccess.Batches.Exceptions;
+using PharmaService.DataAccess.Products.Exceptions;
+using PharmaService.DataAccess.Warehouses.Exceptions;
 using PharmaService.Service.Models.Batch;
 using PharmaService.Service.Services;
 
@@ -12,20 +15,28 @@ public partial class BatchController : ControllerBase
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesErrorResponseType(typeof(ProblemDetails))]
     public async Task<IActionResult> CreateBatchAsync(
         [FromServices] IBatchService batchService,
         [FromBody] [Required] CreationBatchModel model,
         CancellationToken cancellationToken = default)
     {
-        await batchService.CreateAsync(new CreateBatchModel
+        try
         {
-            ProductId = model.ProductId!.Value,
-            ProductCount = model.ProductCount!.Value,
-            CreatedOn = model.CreatedOn,
-            WarehouseId = model.WarehouseId!.Value
-        }, cancellationToken);
-        
-        return Ok();
+            var result = await batchService.CreateAsync(new CreateBatchModel
+            {
+                ProductId = model.ProductId!.Value,
+                ProductCount = model.ProductCount!.Value,
+                CreatedOn = model.CreatedOn,
+                WarehouseId = model.WarehouseId!.Value
+            }, cancellationToken);
+
+            return Ok(result);
+        }
+        catch (Exception ex) when (ex is ProductNotFoundException or WarehouseNotFoundException)
+        {
+            return UnprocessableEntity();
+        }
     }
     
     [HttpGet]
@@ -42,13 +53,20 @@ public partial class BatchController : ControllerBase
     [HttpGet("{batchId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetListAsync(
+    public async Task<IActionResult> GetByIdAsync(
         [FromServices] IBatchService batchService,
         [FromRoute] [Required] Guid batchId,
         CancellationToken cancellationToken = default)
     {
-        var response = await batchService.GetByIdAsync(batchId, cancellationToken);
-        return Ok(response);
+        try
+        {
+            var response = await batchService.GetByIdAsync(batchId, cancellationToken);
+            return Ok(response);
+        }
+        catch (BatchNotFoundException)
+        {
+            return NotFound();
+        }
     }
     
     [HttpGet("by-warehouse")]
@@ -71,7 +89,14 @@ public partial class BatchController : ControllerBase
         [FromQuery] [Required] Guid batchId,
         CancellationToken cancellationToken = default)
     {
-        await batchService.DeleteAsync(batchId, cancellationToken);
-        return Ok();
+        try
+        {
+            await batchService.DeleteAsync(batchId, cancellationToken);
+            return Ok();
+        }
+        catch (BatchNotFoundException)
+        {
+            return NotFound();
+        }
     }
 }

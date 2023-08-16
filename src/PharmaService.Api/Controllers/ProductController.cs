@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using PharmaService.DataAccess.Products.Exceptions;
 using PharmaService.Service.Models.Product;
 using PharmaService.Service.Services;
 
@@ -56,8 +57,15 @@ public partial class ProductController : ControllerBase
         [FromRoute] [Required] Guid productId,
         CancellationToken cancellationToken = default)
     {
-        var response = await productService.GetByIdAsync(productId, cancellationToken);
-        return Ok(response);
+        try
+        {
+            var response = await productService.GetByIdAsync(productId, cancellationToken);
+            return Ok(response);
+        }
+        catch (ProductNotFoundException)
+        {
+            return NotFound();
+        }
     }
     
     [HttpDelete]
@@ -68,7 +76,14 @@ public partial class ProductController : ControllerBase
         [FromQuery] [Required] Guid productId,
         CancellationToken cancellationToken = default)
     {
-        await productService.DeleteAsync(productId, cancellationToken);
-        return Ok();
+        try
+        {
+            await productService.DeleteAsync(productId, cancellationToken);
+            return Ok();
+        }
+        catch (ProductNotFoundException)
+        {
+            return NotFound();
+        }
     }
 }

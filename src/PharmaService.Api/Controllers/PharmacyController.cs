@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using PharmaService.DataAccess.Pharmacies.Exceptions;
 using PharmaService.Service.Models.Pharmacy;
 using PharmaService.Service.Services;
 
@@ -45,8 +46,15 @@ public partial class PharmacyController : ControllerBase
         [FromRoute] [Required] Guid pharmacyId,
         CancellationToken cancellationToken = default)
     {
-        var response = await pharmacyService.GetByIdAsync(pharmacyId, cancellationToken);
-        return Ok(response);
+        try
+        {
+            var response = await pharmacyService.GetByIdAsync(pharmacyId, cancellationToken);
+            return Ok(response);
+        }
+        catch (PharmacyNotFoundException)
+        {
+            return NotFound();
+        }
     }
     
     [HttpDelete]
@@ -57,7 +65,14 @@ public partial class PharmacyController : ControllerBase
         [FromQuery] [Required] Guid pharmacyId,
         CancellationToken cancellationToken = default)
     {
-        await pharmacyService.DeleteAsync(pharmacyId, cancellationToken);
-        return Ok();
+        try
+        {
+            await pharmacyService.DeleteAsync(pharmacyId, cancellationToken);
+            return Ok();
+        }
+        catch (PharmacyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 }

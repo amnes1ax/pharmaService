@@ -74,7 +74,9 @@
     {
         <MudItem xs="12" sm="12" md="12">
             <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pt-0 pb-0">
-                <BatchesList WarehouseId="WarehouseId"/>
+                <MudTabPanel Text="Список партий на складе">
+                    <BatchesList WarehouseId="WarehouseId"/>
+                </MudTabPanel>
             </MudTabs>
         </MudItem>
     }
@@ -93,7 +95,7 @@
     private readonly List<BreadcrumbItem> _breadcrumbsItems = new()
     {
         new BreadcrumbItem("ГЛАВНАЯ", href: "#", icon: Icons.Material.Filled.Home),
-        new BreadcrumbItem("СКЛАДЫ", href: "/warehouses", icon: Icons.Material.Filled.Warehouse),
+        new BreadcrumbItem("СПИСОК СКЛАДОВ", href: "/warehouses", icon: Icons.Material.Filled.Warehouse),
     };
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -120,7 +122,7 @@
             Snackbar.Add(response.Error.GetErrorDetails(), Severity.Error, (options) => { options.CloseAfterNavigation = true; });
             return;
         }
-        _model = new WarehouseItem 
+        _model = new WarehouseItem
         {
             Id = response.Content.Id,
             Title = response.Content.Title,

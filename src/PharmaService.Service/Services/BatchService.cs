@@ -27,6 +27,9 @@ public class BatchService : IBatchService
     {
         var product = await _productRepository.GetByIdAsync(batchModel.ProductId, cancellationToken);
         if (product is null) throw new ProductNotFoundException();
+        var warehouse =
+            await _warehouseRepository.GetByIdAsync(batchModel.WarehouseId, cancellationToken: cancellationToken);
+        if (warehouse is null) throw new WarehouseNotFoundException();
         var batch = new Batch
         {
             Id = Guid.NewGuid(),

@@ -22,7 +22,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\PharmaService.DataAccess\PharmaService.DataAccess.csproj" />
-        <ProjectReference Include="..\PharmaService.Domain\PharmaService.Domain.csproj" />
     </ItemGroup>
 
 </Project>

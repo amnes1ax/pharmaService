@@ -15,7 +15,7 @@
         <MudForm Model="@_model" @ref="@_form" @bind-IsValid="@_modelIsValid">
             <MudGrid>
                 <MudItem xs="12" sm="12" md="12">
-                    <MudTextField Label="Ид. продукта" Variant="Variant.Outlined" Class="my-0"
+                    <MudTextField Label="Ид. товара" Variant="Variant.Outlined" Class="my-0"
                                   @bind-Value="_model.ProductId"
                                   Validation="@(_modelValidator.ValidateValue())"
                                   For="@(() => _model.ProductId)"
@@ -33,15 +33,6 @@
                     </MudTextField>
                 </MudItem>
                 <MudItem xs="12" sm="12" md="12">
-                    <MudTextField Label="Ид. склада" Variant="Variant.Outlined" Class="my-0"
-                                  @bind-Value="_model.WarehouseId"
-                                  Validation="@(_modelValidator.ValidateValue())"
-                                  For="@(() => _model.WarehouseId)"
-                                  Immediate="false"
-                                  Disabled="@IsProcessing">
-                    </MudTextField>
-                </MudItem>
-                <MudItem xs="12" sm="9" md="9">
                     <MudDatePicker
                         Label="Дата производства"
                         Editable="true"
@@ -49,6 +40,15 @@
                         For="@(() => _model.CreatedOn)"
                         Disabled="@IsProcessing">
                     </MudDatePicker>
+                </MudItem>
+                <MudItem xs="12" sm="9" md="12">
+                    <MudTextField Label="Ид. склада" Variant="Variant.Outlined" Class="my-0"
+                                  @bind-Value="_model.WarehouseId"
+                                  Validation="@(_modelValidator.ValidateValue())"
+                                  For="@(() => _model.WarehouseId)"
+                                  Immediate="false"
+                                  Disabled="@IsProcessing">
+                    </MudTextField>
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -117,11 +117,11 @@
                 RuleFor(m => m.ProductCount)
                     .NotEmpty()
                     .WithMessage("Должен быть указан")
-                    .GreaterThan(1)
+                    .GreaterThan(0)
                     .WithMessage("Должно быть больше чем 0");
 
                 RuleFor(m => m.CreatedOn)
-                    .Must(date => DateTimeOffset.UtcNow >= date)
+                    .LessThanOrEqualTo(DateTime.UtcNow)
                     .WithMessage("Должно быть не позднее текущей даты");
                 ;
             }
